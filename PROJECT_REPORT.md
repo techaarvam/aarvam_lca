@@ -224,6 +224,9 @@ and copied here for reference under [`logs/`](logs/):
 
 - [aarvam-local-coding-agent.md](logs/aarvam-local-coding-agent.md)
 - [aarvam-local-coding-agent-verbose.md](logs/aarvam-local-coding-agent-verbose.md)
+- [aarvam-lca-total-path-no-verbose.md](logs/aarvam-lca-total-path-no-verbose.md)
+- [aarvam-lca-total-path-problem.md](logs/aarvam-lca-total-path-problem.md)
+- [aarvam-lca-total-path-problem.c](logs/aarvam-lca-total-path-problem.c)
 
 ---
 

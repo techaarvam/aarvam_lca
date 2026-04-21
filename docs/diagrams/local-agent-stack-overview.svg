@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" role="img" aria-labelledby="title desc">
+  <title id="title">Local Agent Stack Overview</title>
+  <desc id="desc">Architecture diagram showing frontends, proxy, model servers, and models, with arrows labeled by tool calling formats like OpenAI tool_calls, XML, and JSON.</desc>
+  <defs>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2f5068"/>
+    </marker>
+    <style>
+      .title { font: 700 30px Arial, sans-serif; fill: #17364d; }
+      .header { font: 700 20px Arial, sans-serif; fill: #17364d; }
+      .label { font: 600 16px Arial, sans-serif; fill: #17364d; }
+      .text { font: 14px Arial, sans-serif; fill: #27485e; }
+      .tiny { font: 13px Arial, sans-serif; fill: #496577; }
+      .col { fill: #f8fbfd; stroke: #9db7c9; stroke-width: 2; rx: 20; ry: 20; }
+      .cardA { fill: #ddeef8; stroke: #4d7898; stroke-width: 2; rx: 16; ry: 16; }
+      .cardB { fill: #faefd9; stroke: #b6842d; stroke-width: 2; rx: 16; ry: 16; }
+      .cardC { fill: #e8f2de; stroke: #71914a; stroke-width: 2; rx: 16; ry: 16; }
+      .line { stroke: #2f5068; stroke-width: 3; fill: none; marker-end: url(#arrow2); }
+      .dash { stroke: #718799; stroke-width: 2.5; stroke-dasharray: 8 6; fill: none; marker-end: url(#arrow2); }
+    </style>
+  </defs>
+
+  <rect width="1400" height="700" fill="#fcfdff"/>
+  <text x="700" y="46" text-anchor="middle" class="title">Local coding-agent stack on Blackwell RTX 5070 / 12 GB</text>
+
+  <rect x="30" y="90" width="300" height="540" class="col"/>
+  <text x="180" y="126" text-anchor="middle" class="header">1. Frontends</text>
+  <rect x="60" y="160" width="240" height="70" class="cardA"/>
+  <text x="180" y="188" text-anchor="middle" class="label">OpenHands</text>
+  <text x="180" y="210" text-anchor="middle" class="tiny">Good fit for Qwen 2.5 schema</text>
+  <rect x="60" y="255" width="240" height="70" class="cardA"/>
+  <text x="180" y="283" text-anchor="middle" class="label">OpenCode</text>
+  <text x="180" y="305" text-anchor="middle" class="tiny">Works well with Qwen 3 variants</text>
+  <rect x="60" y="350" width="240" height="70" class="cardA"/>
+  <text x="180" y="378" text-anchor="middle" class="label">QwenCode</text>
+  <text x="180" y="400" text-anchor="middle" class="tiny">Claude Code style workflow</text>
+  <rect x="60" y="445" width="240" height="70" class="cardA"/>
+  <text x="180" y="473" text-anchor="middle" class="label">Aider / shells / others</text>
+  <text x="180" y="495" text-anchor="middle" class="tiny">Additional frontends sampled lightly</text>
+
+  <rect x="380" y="90" width="300" height="540" class="col"/>
+  <text x="530" y="126" text-anchor="middle" class="header">2. Proxy / translation layer</text>
+  <rect x="410" y="170" width="240" height="120" class="cardB"/>
+  <text x="530" y="205" text-anchor="middle" class="label">tool_calls_proxy.py</text>
+  <text x="530" y="230" text-anchor="middle" class="text">Bridges Qwen XML / JSON</text>
+  <text x="530" y="252" text-anchor="middle" class="text">into OpenAI tool_calls</text>
+  <text x="530" y="274" text-anchor="middle" class="tiny">Also patches missing args like description</text>
+
+  <rect x="410" y="345" width="240" height="120" class="cardB"/>
+  <text x="530" y="380" text-anchor="middle" class="label">Optional direct path</text>
+  <text x="530" y="405" text-anchor="middle" class="text">OpenHands can speak Qwen 2.5</text>
+  <text x="530" y="427" text-anchor="middle" class="text">without this bridge in some cases</text>
+  <text x="530" y="449" text-anchor="middle" class="tiny">Still useful for unified behavior</text>
+
+  <rect x="730" y="90" width="300" height="540" class="col"/>
+  <text x="880" y="126" text-anchor="middle" class="header">3. Model servers</text>
+  <rect x="760" y="170" width="240" height="140" class="cardC"/>
+  <text x="880" y="204" text-anchor="middle" class="label">Ollama / llama.cpp</text>
+  <text x="880" y="228" text-anchor="middle" class="text">Best hybrid CPU/GPU behavior</text>
+  <text x="880" y="250" text-anchor="middle" class="text">Useful when context spills past GPU</text>
+  <text x="880" y="272" text-anchor="middle" class="tiny">Strong practical fit on 12 GB VRAM</text>
+
+  <rect x="760" y="355" width="240" height="140" class="cardC"/>
+  <text x="880" y="389" text-anchor="middle" class="label">vLLM</text>
+  <text x="880" y="413" text-anchor="middle" class="text">Finer control and parser plugin path</text>
+  <text x="880" y="435" text-anchor="middle" class="text">Blackwell needed TORCH_SDPA workaround</text>
+  <text x="880" y="457" text-anchor="middle" class="tiny">Worth using when the model fits cleanly</text>
+
+  <rect x="1080" y="90" width="290" height="540" class="col"/>
+  <text x="1225" y="126" text-anchor="middle" class="header">4. Models</text>
+  <rect x="1110" y="160" width="230" height="95" class="cardA"/>
+  <text x="1225" y="194" text-anchor="middle" class="label">Qwen 2.5</text>
+  <text x="1225" y="218" text-anchor="middle" class="text">Tool output often arrives as XML or JSON</text>
+  <text x="1225" y="240" text-anchor="middle" class="tiny">Needs translation for many frontends</text>
+
+  <rect x="1110" y="280" width="230" height="95" class="cardA"/>
+  <text x="1225" y="314" text-anchor="middle" class="label">Qwen 3 / Qwen 3.5</text>
+  <text x="1225" y="338" text-anchor="middle" class="text">Supports OpenAI tool_calls more directly</text>
+  <text x="1225" y="360" text-anchor="middle" class="tiny">Still had schema quirks in practice</text>
+
+  <rect x="1110" y="400" width="230" height="95" class="cardA"/>
+  <text x="1225" y="434" text-anchor="middle" class="label">Quantized GGUF / Ollama builds</text>
+  <text x="1225" y="458" text-anchor="middle" class="text">Q4_K_M params, Q8_0 KV, 32K to 64K target</text>
+  <text x="1225" y="480" text-anchor="middle" class="tiny">8B class is the practical recommendation</text>
+
+  <path d="M 300 290 C 340 290, 350 240, 410 240" class="line"/>
+  <text x="355" y="224" text-anchor="middle" class="text">OpenAI tool_calls</text>
+
+  <path d="M 300 205 C 345 205, 355 405, 410 405" class="dash"/>
+  <text x="353" y="386" text-anchor="middle" class="tiny">Direct Qwen 2.5 path in OpenHands</text>
+
+  <path d="M 650 240 C 700 240, 710 240, 760 240" class="line"/>
+  <text x="705" y="221" text-anchor="middle" class="text">Normalized API traffic</text>
+
+  <path d="M 650 240 C 705 240, 710 425, 760 425" class="dash"/>
+  <text x="705" y="445" text-anchor="middle" class="tiny">Optional route to vLLM</text>
+
+  <path d="M 1000 240 C 1045 240, 1055 208, 1110 208" class="line"/>
+  <text x="1054" y="190" text-anchor="middle" class="text">XML / JSON / tool_calls</text>
+
+  <path d="M 1000 425 C 1045 425, 1055 328, 1110 328" class="line"/>
+  <text x="1054" y="308" text-anchor="middle" class="text">Parser plugin / structured output</text>
+
+  <rect x="300" y="655" width="800" height="28" rx="12" ry="12" fill="#eef5d9" stroke="#739145" stroke-width="2"/>
+  <text x="700" y="674" text-anchor="middle" class="tiny">Observed protocol mismatch: some frontends want OpenAI tool_calls, while Qwen 2.5 often emits XML or bare JSON. The proxy closes that gap.</text>
+</svg>

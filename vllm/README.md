@@ -1,4 +1,9 @@
-# Qwen XML Tool Adapter
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Primary authors: Ram (Ramasubramanian B), Claude Code  
+Additional support: Codex
+
+# vLLM Qwen XML Tool Adapter
 
 This repo now includes a vLLM tool parser plugin that converts Qwen 2.5/3
 chat-template tool output like:
@@ -25,13 +30,13 @@ It reuses the same local model artifacts already used by the benchmark:
 ## Start vLLM
 
 ```bash
-python3 serve_qwen_toolcall.py --model qwen2.5-coder-14b-q4 --max-model-len 15360 --port 8100
+python3 vllm/serve_qwen_toolcall.py --model qwen2.5-coder-14b-q4 --max-model-len 15360 --port 8100
 ```
 
 For Qwen 3:
 
 ```bash
-python3 serve_qwen_toolcall.py --model qwen3-14b-q4 --max-model-len 15360 --port 8100
+python3 vllm/serve_qwen_toolcall.py --model qwen3-14b-q4 --max-model-len 15360 --port 8100
 ```
 
 The launcher automatically adds:

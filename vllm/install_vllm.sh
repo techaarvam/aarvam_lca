@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# --------------------------------------------------
+# Copyright
+# --------------------------------------------------
+#
+# Tech Aarvam
+# Copyright (c) 2026 Tech Aarvam.
+# Primary authors: Ram (Ramasubramanian B), Claude Code
+# Additional support: Codex
+#
 # Install vLLM for Blackwell (sm_120 / RTX 5070) with PyTorch 2.8 + CUDA 12.8
 set -e
 
@@ -46,4 +55,4 @@ echo "  huggingface-cli download Qwen/Qwen2.5-Coder-14B-Instruct-AWQ"
 echo "  huggingface-cli download Qwen/Qwen3-14B-Instruct  (BF16, ~28GB — use --quantization bitsandbytes)"
 echo "  huggingface-cli download Qwen/Qwen3-14B-Instruct-GPTQ-Int4  (if available)"
 echo ""
-echo "Done. Run: python3 vllm_benchmark.py"
+echo "Done. Run: python3 vllm/vllm_benchmark.py"

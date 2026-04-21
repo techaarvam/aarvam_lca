@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+# --------------------------------------------------
+# Copyright
+# --------------------------------------------------
+#
+# Tech Aarvam
+# Copyright (c) 2026 Tech Aarvam.
+# Primary authors: Ram (Ramasubramanian B), Claude Code
+# Additional support: Codex
+#
 """Shared model registry for the local Qwen vLLM experiments."""
 
 from __future__ import annotations

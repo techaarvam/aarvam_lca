@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+# --------------------------------------------------
+# Copyright
+# --------------------------------------------------
+#
+# Tech Aarvam
+# Copyright (c) 2026 Tech Aarvam.
+# Primary authors: Ram (Ramasubramanian B), Claude Code
+# Additional support: Codex
+#
 """
 Proxy for Ollama models that emit tool calls as raw JSON content.
 

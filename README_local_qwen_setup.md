@@ -1,3 +1,8 @@
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Primary authors: Ram (Ramasubramanian B), Claude Code  
+Additional support: Codex
+
 # Local Qwen Agent Mode Setup
 
 Full setup for running local Qwen models as large-context coding agents in

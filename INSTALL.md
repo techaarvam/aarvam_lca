@@ -1,3 +1,8 @@
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Primary authors: Ram (Ramasubramanian B), Claude Code  
+Additional support: Codex
+
 # Local AI Agent Stack — Installation & Configuration
 
 Full setup guide for running local Qwen models as coding agents on an RTX 5070

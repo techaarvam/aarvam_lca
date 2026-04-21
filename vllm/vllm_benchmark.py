@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+# --------------------------------------------------
+# Copyright
+# --------------------------------------------------
+#
+# Tech Aarvam
+# Copyright (c) 2026 Tech Aarvam.
+# Primary authors: Ram (Ramasubramanian B), Claude Code
+# Additional support: Codex
+#
 """
 vLLM benchmark: Qwen models at 16k/32k context, fp16 vs fp8 KV cache, GGUF q4_K_M weights.
 GPU: RTX 5070 (sm_120 Blackwell, 12GB VRAM)

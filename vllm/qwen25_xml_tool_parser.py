@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+# --------------------------------------------------
+# Copyright
+# --------------------------------------------------
+#
+# Tech Aarvam
+# Copyright (c) 2026 Tech Aarvam.
+# Primary authors: Ram (Ramasubramanian B), Claude Code
+# Additional support: Codex
+#
 """vLLM tool parser plugin for Qwen 2.5/3 JSON-in-XML tool calls."""
 
 from __future__ import annotations

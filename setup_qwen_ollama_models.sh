@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# --------------------------------------------------
+# Copyright
+# --------------------------------------------------
+#
+# Tech Aarvam
+# Copyright (c) 2026 Tech Aarvam.
+# Primary authors: Ram (Ramasubramanian B), Claude Code
+# Additional support: Codex
+#
 # One-shot setup/restore for the qwen2.5-coder-7b-32k Ollama fallback model.
 # Safe to re-run at any time.
 set -euo pipefail

@@ -97,5 +97,5 @@ If the model emits Qwen XML, vLLM responses will expose standard OpenAI
 
 Tech Aarvam  
 Copyright (c) 2026 Tech Aarvam.  
-Primary authors: Ram (Ramasubramanian B), Claude Code  
-Additional support: Codex
+Author: Claude Code  
+Prompt engineer: Ram (Ramasubramanian B)

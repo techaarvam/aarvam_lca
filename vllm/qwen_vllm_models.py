@@ -5,8 +5,8 @@
 #
 # Tech Aarvam
 # Copyright (c) 2026 Tech Aarvam.
-# Primary authors: Ram (Ramasubramanian B), Claude Code
-# Additional support: Codex
+# Author: Claude Code
+# Prompt engineer: Ram (Ramasubramanian B)
 #
 """Shared model registry for the local Qwen vLLM experiments."""
 

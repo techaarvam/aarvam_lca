@@ -5,8 +5,8 @@
 #
 # Tech Aarvam
 # Copyright (c) 2026 Tech Aarvam.
-# Primary authors: Ram (Ramasubramanian B), Claude Code
-# Additional support: Codex
+# Author: Claude Code
+# Prompt engineer: Ram (Ramasubramanian B)
 #
 # Install vLLM for Blackwell (sm_120 / RTX 5070) with PyTorch 2.8 + CUDA 12.8
 set -e

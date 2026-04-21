@@ -27,8 +27,8 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="1.0916667"
-     inkscape:cx="600"
-     inkscape:cy="255.1145"
+     inkscape:cx="599.99998"
+     inkscape:cy="256.03053"
      inkscape:window-width="3440"
      inkscape:window-height="1416"
      inkscape:window-x="0"
@@ -191,7 +191,7 @@
      text-anchor="middle"
      class="section"
      id="text39"
-     style="font-style:normal;font-variant:normal;font-weight:700;font-stretch:normal;font-size:16px;line-height:normal;font-family:Arial, sans-serif">tool_calls_proxy.py · port 8100</text>
+     style="font-style:normal;font-variant:normal;font-weight:700;font-stretch:normal;font-size:16px;line-height:normal;font-family:Arial, sans-serif">tool_calls_proxy.py - port 8100</text>
   <text
      x="545"
      y="98"
@@ -444,7 +444,9 @@
      text-anchor="middle"
      class="text"
      id="text107"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;line-height:normal;font-family:Arial, sans-serif">Limited 12GB VRAM leaves less room for the model to self-correct schema mismatches. The proxy removes the back and forth retries</text>
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;line-height:normal;font-family:Arial, sans-serif"><tspan
+       id="tspan398"
+       style="font-size:16px">Limited 12GB VRAM leaves less room for the model to self-correct schema mismatches. The proxy removes the back and forth retries</tspan></text>
   <metadata
      id="metadata538">
     <rdf:RDF>

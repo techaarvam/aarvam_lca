@@ -25,7 +25,7 @@
      showgrid="false"
      inkscape:zoom="0.87333333"
      inkscape:cx="750"
-     inkscape:cy="360.1145"
+     inkscape:cy="361.25954"
      inkscape:window-width="3440"
      inkscape:window-height="1416"
      inkscape:window-x="0"
@@ -525,5 +525,8 @@
      y="680"
      text-anchor="middle"
      class="tiny"
-     id="text159">Observed protocol mismatch: some frontends want OpenAI tool_calls, while Qwen 2.5 often emits XML or bare JSON. The proxy closes that gap.</text>
+     id="text159"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;line-height:normal;font-family:Arial, sans-serif"><tspan
+       id="tspan411"
+       style="font-size:18.6667px">Observed protocol mismatch: some frontends want OpenAI tool_calls, while Qwen 2.5 often emits XML or bare JSON. The proxy closes that gap.</tspan></text>
 </svg>

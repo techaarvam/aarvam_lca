@@ -1,11 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="720" viewBox="0 0 1500 720" role="img" aria-labelledby="title desc">
-  <title id="title">Local Agent Stack Overview</title>
-  <desc id="desc">Architecture diagram showing frontends, proxy, model servers, and models, with arrows labeled by tool calling formats like OpenAI tool_calls, XML, and JSON.</desc>
-  <defs>
-    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2f5068"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1500"
+   height="720"
+   viewBox="0 0 1500 720"
+   role="img"
+   aria-labelledby="title desc"
+   version="1.1"
+   id="svg161"
+   sodipodi:docname="local-agent-stack-overview.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview163"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.87333333"
+     inkscape:cx="750"
+     inkscape:cy="360.1145"
+     inkscape:window-width="3440"
+     inkscape:window-height="1416"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg161" />
+  <title
+     id="title">Local Agent Stack Overview</title>
+  <desc
+     id="desc">Architecture diagram showing frontends, proxy, model servers, and models, with arrows labeled by tool calling formats like OpenAI tool_calls, XML, and JSON.</desc>
+  <defs
+     id="defs9">
+    <marker
+       id="arrow2"
+       markerWidth="10"
+       markerHeight="10"
+       refX="9"
+       refY="5"
+       orient="auto-start-reverse">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="#2f5068"
+         id="path4" />
     </marker>
-    <style>
+    <style
+       id="style7">
       .title  { font: 700 30px Arial, sans-serif; fill: #17364d; }
       .header { font: 700 20px Arial, sans-serif; fill: #17364d; }
       .label  { font: 600 16px Arial, sans-serif; fill: #17364d; }
@@ -15,115 +61,469 @@
       .dash   { stroke: #718799; stroke-width: 2.5; stroke-dasharray: 8 6; fill: none; marker-end: url(#arrow2); }
     </style>
   </defs>
-
-  <rect width="1500" height="720" fill="#fcfdff"/>
-  <text x="750" y="46" text-anchor="middle" class="title">Local coding-agent stack on Blackwell RTX 5070 / 12 GB</text>
-
+  <rect
+     width="1500"
+     height="720"
+     fill="#fcfdff"
+     id="rect11" />
+  <text
+     x="750"
+     y="46"
+     text-anchor="middle"
+     class="title"
+     id="text13">Local coding-agent stack on Blackwell RTX 5070 / 12 GB</text>
   <!-- ── Col 1: Frontends  x=30 w=330 center=195 inner x=58 w=274 ── -->
-  <rect x="30" y="90" width="330" height="540" rx="20" ry="20" fill="#f8fbfd" stroke="#9db7c9" stroke-width="2"/>
-  <text x="195" y="126" text-anchor="middle" class="header">1. Frontends</text>
-
-  <rect x="58" y="155" width="274" height="70" rx="16" ry="16" fill="#ddeef8" stroke="#4d7898" stroke-width="2"/>
-  <text x="195" y="183" text-anchor="middle" class="label">OpenHands</text>
-  <text x="195" y="205" text-anchor="middle" class="tiny">Good fit for Qwen 2.5 schema</text>
-
-  <rect x="58" y="250" width="274" height="70" rx="16" ry="16" fill="#ddeef8" stroke="#4d7898" stroke-width="2"/>
-  <text x="195" y="278" text-anchor="middle" class="label">OpenCode</text>
-  <text x="195" y="300" text-anchor="middle" class="tiny">Works well with Qwen 3 variants</text>
-
-  <rect x="58" y="345" width="274" height="70" rx="16" ry="16" fill="#ddeef8" stroke="#4d7898" stroke-width="2"/>
-  <text x="195" y="373" text-anchor="middle" class="label">QwenCode</text>
-  <text x="195" y="395" text-anchor="middle" class="tiny">Claude Code style workflow</text>
-
-  <rect x="58" y="440" width="274" height="70" rx="16" ry="16" fill="#ddeef8" stroke="#4d7898" stroke-width="2"/>
-  <text x="195" y="468" text-anchor="middle" class="label">Aider / shells / others</text>
-  <text x="195" y="490" text-anchor="middle" class="tiny">Additional frontends sampled lightly</text>
-
+  <rect
+     x="30"
+     y="90"
+     width="330"
+     height="540"
+     rx="20"
+     ry="20"
+     fill="#f8fbfd"
+     stroke="#9db7c9"
+     stroke-width="2"
+     id="rect15" />
+  <text
+     x="195"
+     y="126"
+     text-anchor="middle"
+     class="header"
+     id="text17">1. Frontends</text>
+  <rect
+     x="58"
+     y="155"
+     width="274"
+     height="70"
+     rx="16"
+     ry="16"
+     fill="#ddeef8"
+     stroke="#4d7898"
+     stroke-width="2"
+     id="rect19" />
+  <text
+     x="195"
+     y="183"
+     text-anchor="middle"
+     class="label"
+     id="text21">OpenHands</text>
+  <text
+     x="195"
+     y="205"
+     text-anchor="middle"
+     class="tiny"
+     id="text23"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;line-height:normal;font-family:Arial, sans-serif">Docker isolated</text>
+  <rect
+     x="58"
+     y="250"
+     width="274"
+     height="70"
+     rx="16"
+     ry="16"
+     fill="#ddeef8"
+     stroke="#4d7898"
+     stroke-width="2"
+     id="rect25" />
+  <text
+     x="195"
+     y="278"
+     text-anchor="middle"
+     class="label"
+     id="text27">OpenCode</text>
+  <text
+     x="195"
+     y="300"
+     text-anchor="middle"
+     class="tiny"
+     id="text29">Works well with Qwen 3 variants</text>
+  <rect
+     x="58"
+     y="345"
+     width="274"
+     height="70"
+     rx="16"
+     ry="16"
+     fill="#ddeef8"
+     stroke="#4d7898"
+     stroke-width="2"
+     id="rect31" />
+  <text
+     x="195"
+     y="373"
+     text-anchor="middle"
+     class="label"
+     id="text33">QwenCode</text>
+  <text
+     x="195"
+     y="395"
+     text-anchor="middle"
+     class="tiny"
+     id="text35">Claude Code style workflow</text>
+  <rect
+     x="58"
+     y="440"
+     width="274"
+     height="70"
+     rx="16"
+     ry="16"
+     fill="#ddeef8"
+     stroke="#4d7898"
+     stroke-width="2"
+     id="rect37" />
+  <text
+     x="195"
+     y="468"
+     text-anchor="middle"
+     class="label"
+     id="text39">Aider / shells / others</text>
+  <text
+     x="195"
+     y="490"
+     text-anchor="middle"
+     class="tiny"
+     id="text41">Additional frontends sampled lightly</text>
   <!-- ── Col 2: Proxy  x=410 w=330 center=575 inner x=438 w=274 ── -->
-  <rect x="410" y="90" width="330" height="540" rx="20" ry="20" fill="#f8fbfd" stroke="#9db7c9" stroke-width="2"/>
-  <text x="575" y="126" text-anchor="middle" class="header">2. Proxy / translation layer</text>
-
-  <rect x="438" y="155" width="274" height="135" rx="16" ry="16" fill="#faefd9" stroke="#b6842d" stroke-width="2"/>
-  <text x="575" y="182" text-anchor="middle" class="label">tool_calls_proxy.py</text>
-  <text x="575" y="204" text-anchor="middle" class="text">Bridges Qwen XML / JSON</text>
-  <text x="575" y="222" text-anchor="middle" class="text">into OpenAI tool_calls</text>
-  <text x="575" y="244" text-anchor="middle" class="tiny">Also patches missing required</text>
-  <text x="575" y="260" text-anchor="middle" class="tiny">args like description</text>
-  <text x="575" y="276" text-anchor="middle" class="tiny">Runs on port 8100</text>
-
-  <rect x="438" y="345" width="274" height="120" rx="16" ry="16" fill="#faefd9" stroke="#b6842d" stroke-width="2"/>
-  <text x="575" y="372" text-anchor="middle" class="label">Optional direct path</text>
-  <text x="575" y="394" text-anchor="middle" class="text">OpenHands can speak Qwen 2.5</text>
-  <text x="575" y="412" text-anchor="middle" class="text">without this bridge in some cases</text>
-  <text x="575" y="432" text-anchor="middle" class="tiny">Still useful for unified behavior</text>
-
+  <rect
+     x="410"
+     y="90"
+     width="330"
+     height="540"
+     rx="20"
+     ry="20"
+     fill="#f8fbfd"
+     stroke="#9db7c9"
+     stroke-width="2"
+     id="rect43" />
+  <text
+     x="575"
+     y="126"
+     text-anchor="middle"
+     class="header"
+     id="text45">2. Proxy / translation layer</text>
+  <rect
+     x="438"
+     y="155"
+     width="274"
+     height="135"
+     rx="16"
+     ry="16"
+     fill="#faefd9"
+     stroke="#b6842d"
+     stroke-width="2"
+     id="rect47" />
+  <text
+     x="575"
+     y="182"
+     text-anchor="middle"
+     class="label"
+     id="text49">tool_calls_proxy.py</text>
+  <text
+     x="575"
+     y="204"
+     text-anchor="middle"
+     class="text"
+     id="text51">Bridges Qwen XML / JSON</text>
+  <text
+     x="575"
+     y="222"
+     text-anchor="middle"
+     class="text"
+     id="text53">into OpenAI tool_calls</text>
+  <text
+     x="575"
+     y="244"
+     text-anchor="middle"
+     class="tiny"
+     id="text55">Also patches missing required</text>
+  <text
+     x="575"
+     y="260"
+     text-anchor="middle"
+     class="tiny"
+     id="text57">args like description</text>
+  <text
+     x="575"
+     y="276"
+     text-anchor="middle"
+     class="tiny"
+     id="text59">Runs on port 8100</text>
+  <rect
+     x="438"
+     y="345"
+     width="274"
+     height="120"
+     rx="16"
+     ry="16"
+     fill="#faefd9"
+     stroke="#b6842d"
+     stroke-width="2"
+     id="rect61" />
+  <text
+     x="575"
+     y="372"
+     text-anchor="middle"
+     class="label"
+     id="text63">Optional direct path</text>
+  <text
+     x="575"
+     y="394"
+     text-anchor="middle"
+     class="text"
+     id="text65">OpenHands can speak Qwen 2.5</text>
+  <text
+     x="575"
+     y="412"
+     text-anchor="middle"
+     class="text"
+     id="text67"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:Arial, sans-serif">without this bridge</text>
+  <text
+     x="575"
+     y="432"
+     text-anchor="middle"
+     class="tiny"
+     id="text69">Still useful for unified behavior</text>
   <!-- ── Col 3: Model servers  x=790 w=330 center=955 inner x=818 w=274 ── -->
-  <rect x="790" y="90" width="330" height="540" rx="20" ry="20" fill="#f8fbfd" stroke="#9db7c9" stroke-width="2"/>
-  <text x="955" y="126" text-anchor="middle" class="header">3. Model servers</text>
-
-  <rect x="818" y="155" width="274" height="145" rx="16" ry="16" fill="#e8f2de" stroke="#71914a" stroke-width="2"/>
-  <text x="955" y="185" text-anchor="middle" class="label">Ollama / llama.cpp</text>
-  <text x="955" y="209" text-anchor="middle" class="text">Best hybrid CPU/GPU behavior</text>
-  <text x="955" y="229" text-anchor="middle" class="text">Useful when context spills past GPU</text>
-  <text x="955" y="251" text-anchor="middle" class="tiny">Strong practical fit on 12 GB VRAM</text>
-  <text x="955" y="271" text-anchor="middle" class="tiny">q8_0 KV cache reduces VRAM footprint</text>
-
-  <rect x="818" y="355" width="274" height="155" rx="16" ry="16" fill="#e8f2de" stroke="#71914a" stroke-width="2"/>
-  <text x="955" y="382" text-anchor="middle" class="label">vLLM</text>
-  <text x="955" y="404" text-anchor="middle" class="text">Finer control and parser plugin path</text>
-  <text x="955" y="422" text-anchor="middle" class="text">fp8 KV cache only on Blackwell;</text>
-  <text x="955" y="440" text-anchor="middle" class="text">7B model has GQA ratio bug</text>
-  <text x="955" y="460" text-anchor="middle" class="tiny">14B unaffected; viable when model fits</text>
-  <text x="955" y="478" text-anchor="middle" class="tiny">Worth using for tighter throughput control</text>
-
+  <rect
+     x="790"
+     y="90"
+     width="330"
+     height="540"
+     rx="20"
+     ry="20"
+     fill="#f8fbfd"
+     stroke="#9db7c9"
+     stroke-width="2"
+     id="rect71" />
+  <text
+     x="955"
+     y="126"
+     text-anchor="middle"
+     class="header"
+     id="text73">3. Model servers</text>
+  <rect
+     x="818"
+     y="155"
+     width="274"
+     height="145"
+     rx="16"
+     ry="16"
+     fill="#e8f2de"
+     stroke="#71914a"
+     stroke-width="2"
+     id="rect75" />
+  <text
+     x="955"
+     y="185"
+     text-anchor="middle"
+     class="label"
+     id="text77">Ollama / llama.cpp</text>
+  <text
+     x="955"
+     y="209"
+     text-anchor="middle"
+     class="text"
+     id="text79">Best hybrid CPU/GPU behavior</text>
+  <text
+     x="955"
+     y="229"
+     text-anchor="middle"
+     class="text"
+     id="text81">Useful when context spills past GPU</text>
+  <text
+     x="955"
+     y="251"
+     text-anchor="middle"
+     class="tiny"
+     id="text83">Strong practical fit on 12 GB VRAM</text>
+  <text
+     x="955"
+     y="271"
+     text-anchor="middle"
+     class="tiny"
+     id="text85">q8_0 KV cache reduces VRAM footprint</text>
+  <rect
+     x="818"
+     y="355"
+     width="274"
+     height="155"
+     rx="16"
+     ry="16"
+     fill="#e8f2de"
+     stroke="#71914a"
+     stroke-width="2"
+     id="rect87" />
+  <text
+     x="955"
+     y="382"
+     text-anchor="middle"
+     class="label"
+     id="text89">vLLM</text>
+  <text
+     x="955"
+     y="404"
+     text-anchor="middle"
+     class="text"
+     id="text91">Finer control and parser plugin path</text>
+  <text
+     x="955"
+     y="422"
+     text-anchor="middle"
+     class="text"
+     id="text93">fp8 KV cache only on Blackwell;</text>
+  <text
+     x="955"
+     y="440"
+     text-anchor="middle"
+     class="text"
+     id="text95">7B model has GQA ratio bug</text>
+  <text
+     x="955"
+     y="460"
+     text-anchor="middle"
+     class="tiny"
+     id="text97">14B unaffected; viable when model fits</text>
+  <text
+     x="955"
+     y="478"
+     text-anchor="middle"
+     class="tiny"
+     id="text99">Worth using for tighter throughput control</text>
   <!-- ── Col 4: Models  x=1170 w=300 center=1320 inner x=1198 w=244 ── -->
-  <rect x="1170" y="90" width="300" height="540" rx="20" ry="20" fill="#f8fbfd" stroke="#9db7c9" stroke-width="2"/>
-  <text x="1320" y="126" text-anchor="middle" class="header">4. Models</text>
-
-  <rect x="1198" y="155" width="244" height="105" rx="16" ry="16" fill="#ddeef8" stroke="#4d7898" stroke-width="2"/>
-  <text x="1320" y="182" text-anchor="middle" class="label">Qwen 2.5</text>
-  <text x="1320" y="204" text-anchor="middle" class="text">Tool output as XML or bare JSON</text>
-  <text x="1320" y="224" text-anchor="middle" class="tiny">Needs proxy for most frontends</text>
-
-  <rect x="1198" y="280" width="244" height="105" rx="16" ry="16" fill="#ddeef8" stroke="#4d7898" stroke-width="2"/>
-  <text x="1320" y="307" text-anchor="middle" class="label">Qwen 3 / Qwen 3.5</text>
-  <text x="1320" y="329" text-anchor="middle" class="text">Native OpenAI tool_calls support</text>
-  <text x="1320" y="349" text-anchor="middle" class="tiny">Still had schema quirks in practice</text>
-
-  <rect x="1198" y="405" width="244" height="115" rx="16" ry="16" fill="#ddeef8" stroke="#4d7898" stroke-width="2"/>
-  <text x="1320" y="432" text-anchor="middle" class="label">Quantized GGUF builds</text>
-  <text x="1320" y="452" text-anchor="middle" class="text">Q4_K_M params, Q8_0 KV cache</text>
-  <text x="1320" y="470" text-anchor="middle" class="text">32K to 64K context target</text>
-  <text x="1320" y="488" text-anchor="middle" class="tiny">8B class is the recommendation</text>
-
+  <rect
+     x="1170"
+     y="90"
+     width="300"
+     height="540"
+     rx="20"
+     ry="20"
+     fill="#f8fbfd"
+     stroke="#9db7c9"
+     stroke-width="2"
+     id="rect101" />
+  <text
+     x="1320"
+     y="126"
+     text-anchor="middle"
+     class="header"
+     id="text103">4. Models</text>
+  <rect
+     x="1198"
+     y="155"
+     width="244"
+     height="105"
+     rx="16"
+     ry="16"
+     fill="#ddeef8"
+     stroke="#4d7898"
+     stroke-width="2"
+     id="rect105" />
+  <text
+     x="1320"
+     y="182"
+     text-anchor="middle"
+     class="label"
+     id="text107">Qwen 2.5</text>
+  <text
+     x="1320"
+     y="204"
+     text-anchor="middle"
+     class="text"
+     id="text109">Tool output as XML or bare JSON</text>
+  <text
+     x="1320"
+     y="224"
+     text-anchor="middle"
+     class="tiny"
+     id="text111">Needs proxy for most frontends</text>
+  <rect
+     x="1198"
+     y="280"
+     width="244"
+     height="105"
+     rx="16"
+     ry="16"
+     fill="#ddeef8"
+     stroke="#4d7898"
+     stroke-width="2"
+     id="rect113" />
+  <text
+     x="1320"
+     y="307"
+     text-anchor="middle"
+     class="label"
+     id="text115">Qwen 3 / Qwen 3.5</text>
+  <text
+     x="1320"
+     y="329"
+     text-anchor="middle"
+     class="text"
+     id="text117">Native OpenAI tool_calls support</text>
+  <text
+     x="1320"
+     y="349"
+     text-anchor="middle"
+     class="tiny"
+     id="text119">Still had schema quirks in practice</text>
+  <rect
+     x="1198"
+     y="405"
+     width="244"
+     height="115"
+     rx="16"
+     ry="16"
+     fill="#ddeef8"
+     stroke="#4d7898"
+     stroke-width="2"
+     id="rect121" />
+  <text
+     x="1320"
+     y="432"
+     text-anchor="middle"
+     class="label"
+     id="text123">Quantized GGUF builds</text>
+  <text
+     x="1320"
+     y="452"
+     text-anchor="middle"
+     class="text"
+     id="text125">Q4_K_M params, Q8_0 KV cache</text>
+  <text
+     x="1320"
+     y="470"
+     text-anchor="middle"
+     class="text"
+     id="text127">32K to 64K context target</text>
+  <text
+     x="1320"
+     y="488"
+     text-anchor="middle"
+     class="tiny"
+     id="text129">8B class is the recommendation</text>
   <!-- ── Arrows ── -->
-
   <!-- Frontend → Proxy (OpenAI tool_calls, solid) -->
-  <path d="M 330 280 C 370 280, 400 227, 410 227" class="line"/>
-  <text x="370" y="248" text-anchor="middle" class="text">OpenAI tool_calls</text>
-
   <!-- OpenHands → Optional direct path (dashed) -->
-  <path d="M 330 195 C 375 195, 395 405, 410 405" class="dash"/>
-  <text x="370" y="382" text-anchor="middle" class="tiny">Direct Qwen 2.5</text>
-  <text x="370" y="396" text-anchor="middle" class="tiny">path in OpenHands</text>
-
   <!-- Proxy → Ollama (solid) -->
-  <path d="M 740 227 C 765 227, 780 238, 790 238" class="line"/>
-  <text x="765" y="214" text-anchor="middle" class="text">Normalized API traffic</text>
-
   <!-- Proxy → vLLM (optional, dashed) -->
-  <path d="M 740 227 C 765 227, 780 428, 790 428" class="dash"/>
-  <text x="765" y="450" text-anchor="middle" class="tiny">Optional route to vLLM</text>
-
   <!-- Ollama → Qwen models (solid) -->
-  <path d="M 1120 238 C 1145 238, 1155 207, 1170 207" class="line"/>
-  <text x="1145" y="222" text-anchor="middle" class="text">XML / JSON / tool_calls</text>
-
   <!-- vLLM → Qwen models (solid) -->
-  <path d="M 1120 428 C 1145 428, 1155 332, 1170 332" class="line"/>
-  <text x="1145" y="310" text-anchor="middle" class="text">Parser plugin / structured output</text>
-
   <!-- ── Bottom callout ── -->
-  <rect x="60" y="655" width="1380" height="40" rx="14" ry="14" fill="#eef5d9" stroke="#739145" stroke-width="2"/>
-  <text x="750" y="680" text-anchor="middle" class="tiny">Observed protocol mismatch: some frontends want OpenAI tool_calls, while Qwen 2.5 often emits XML or bare JSON. The proxy closes that gap.</text>
+  <rect
+     x="60"
+     y="655"
+     width="1380"
+     height="40"
+     rx="14"
+     ry="14"
+     fill="#eef5d9"
+     stroke="#739145"
+     stroke-width="2"
+     id="rect157" />
+  <text
+     x="750"
+     y="680"
+     text-anchor="middle"
+     class="tiny"
+     id="text159">Observed protocol mismatch: some frontends want OpenAI tool_calls, while Qwen 2.5 often emits XML or bare JSON. The proxy closes that gap.</text>
 </svg>

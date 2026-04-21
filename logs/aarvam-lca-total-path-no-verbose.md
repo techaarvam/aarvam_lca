@@ -8,7 +8,7 @@
 
 ## User
 
-write a reccursive implementation to find the solution to this problem. There is a 6*6 grid. At each step you can go either right or down. What is the total number of paths that can take you from (0,0) at the top left to (5,5) at the bottom right. Write a c-code for this, compile using gcc , run and store the output in output_path_list.txt
+write a recursive implementation to find the solution to this problem. There is a 6*6 grid. At each step you can go either right or down. What is the total number of paths that can take you from (0,0) at the top left to (5,5) at the bottom right. Write a c-code for this, compile using gcc , run and store the output in output_path_list.txt
 
 ---
 
@@ -123,4 +123,3 @@ The program successfully calculates the number of paths in a 6x6 grid using recu
 Stored in: `output_path_list.txt`
 
 ---
-

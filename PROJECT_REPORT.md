@@ -217,6 +217,14 @@ For this Blackwell 5070 / 12 GB setup, the most practical direction is:
 - expand the comparison matrix beyond Qwen once the tool-call variables are more
   controlled
 
+## Session Logs
+
+The repo also includes selected session outputs captured under `~/alca_run`
+and copied here for reference under [`logs/`](logs/):
+
+- [aarvam-local-coding-agent.md](logs/aarvam-local-coding-agent.md)
+- [aarvam-local-coding-agent-verbose.md](logs/aarvam-local-coding-agent-verbose.md)
+
 ---
 
 Tech Aarvam  

@@ -62,21 +62,21 @@
 
   <!-- ── Forward arrows (solid) ── -->
   <path d="M 280 185 L 320 185" class="line"/>
-  <text x="300" y="174" text-anchor="middle" class="small">OpenAI</text>
-  <text x="300" y="186" text-anchor="middle" class="small">request</text>
+  <text x="300" y="163" text-anchor="middle" class="small">OpenAI</text>
+  <text x="300" y="177" text-anchor="middle" class="small">request</text>
 
   <path d="M 770 175 L 820 175" class="line"/>
-  <text x="795" y="164" text-anchor="middle" class="small">Forward</text>
-  <text x="795" y="176" text-anchor="middle" class="small">request</text>
+  <text x="795" y="154" text-anchor="middle" class="small">Forward</text>
+  <text x="795" y="168" text-anchor="middle" class="small">request</text>
 
   <!-- ── Return arrows (dashed) ── -->
   <path d="M 820 235 L 770 235" class="dash" marker-end="url(#arrow)"/>
-  <text x="795" y="228" text-anchor="middle" class="small">XML / JSON</text>
-  <text x="795" y="242" text-anchor="middle" class="small">/ partial</text>
+  <text x="795" y="250" text-anchor="middle" class="small">XML / JSON</text>
+  <text x="795" y="264" text-anchor="middle" class="small">/ partial</text>
 
   <path d="M 320 265 L 280 265" class="dash" marker-end="url(#arrow)"/>
-  <text x="300" y="258" text-anchor="middle" class="small">Normalized</text>
-  <text x="300" y="272" text-anchor="middle" class="small">tool_calls</text>
+  <text x="300" y="280" text-anchor="middle" class="small">Normalized</text>
+  <text x="300" y="294" text-anchor="middle" class="small">tool_calls</text>
 
   <!-- ── Bottom callout ── -->
   <rect x="60" y="378" width="1080" height="58" rx="14" ry="14" fill="#edf4d8" stroke="#7d9a3b" stroke-width="2"/>

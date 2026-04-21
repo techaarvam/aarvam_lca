@@ -205,9 +205,9 @@ For this Blackwell 5070 / 12 GB setup, the most practical direction is:
 
 - `ollama ps` shows the loaded size, context length, and CPU/GPU split.
 - `ollama show <model-name>` shows more detailed model metadata.
-- See [README.md](README.md) and
+- See [README.md](README.md), [INSTALL.md](INSTALL.md), and
   [README_local_qwen_setup.md](README_local_qwen_setup.md) for the repo setup
-  instructions, Ollama server usage, and proxy-server steps.
+  instructions, full installation steps, Ollama server usage, and proxy-server steps.
 
 ## Future Work
 

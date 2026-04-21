@@ -118,15 +118,31 @@ curl -sf http://127.0.0.1:8100/api/tags > /dev/null && echo "Proxy up"
 
 ## 3. Models
 
-All models are custom Ollama registrations that set `num_ctx 32768` to unlock
-the 32k context window the weights natively support. None are pre-built
-downloadable "32k" variants.
+All models here are local Ollama registrations built from existing upstream
+models with an explicit `num_ctx` override. On this setup, leaving `qwen3:8b`
+without that override defaulted to a much smaller usable context window
+(`4096`), while explicit `32768` and `65536` variants both worked in practice.
 
-### qwen3-8b-32k (recommended)
+### qwen3-8b-64k (recommended on this machine)
 
 ```bash
 ollama pull qwen3:8b   # 5.2 GB
 
+cat > /tmp/Modelfile-qwen3-8b-64k << 'EOF'
+FROM qwen3:8b
+PARAMETER num_ctx 65536
+EOF
+
+ollama create qwen3-8b-64k -f /tmp/Modelfile-qwen3-8b-64k
+```
+
+This is the practical recommendation for this 12 GB Blackwell machine because
+the 8B model leaves enough room to keep the layers on GPU while still pushing
+to a much larger context than the default.
+
+### qwen3-8b-32k (optional lower-context variant)
+
+```bash
 cat > /tmp/Modelfile-qwen3-8b-32k << 'EOF'
 FROM qwen3:8b
 PARAMETER num_ctx 32768
@@ -134,8 +150,6 @@ EOF
 
 ollama create qwen3-8b-32k -f /tmp/Modelfile-qwen3-8b-32k
 ```
-
-Capabilities: `tools`, `thinking`. Best overall quality for agent tasks.
 
 ### qwen2.5-coder-7b-32k (fallback)
 
@@ -159,9 +173,9 @@ cd ~/qwenrundemo/aarvam_lca && ./setup_qwen_ollama_models.sh
 ### Verify
 
 ```bash
-ollama list | grep -E "qwen3-8b-32k|coder-7b-32k"
+ollama list | grep -E "qwen3-8b-64k|qwen3-8b-32k|coder-7b-32k"
 
-curl -s http://localhost:11434/api/show -d '{"name":"qwen3-8b-32k"}' \
+curl -s http://localhost:11434/api/show -d '{"name":"qwen3-8b-64k"}' \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('capabilities',[]))"
 # Expected: ['completion', 'tools', 'thinking']
 ```
@@ -198,6 +212,16 @@ Full file with all local models:
   "modelProviders": {
     "openai": [
       {
+        "id": "qwen3-8b-64k",
+        "contextLength": 65536,
+        "envKey": "OPENAI_API_KEY",
+        "baseUrl": "http://127.0.0.1:8100/v1",
+        "generationConfig": {
+          "samplingParams": { "max_tokens": 4096 },
+          "chatCompression": { "contextPercentageThreshold": 0.15 }
+        }
+      },
+      {
         "id": "qwen3-8b-32k",
         "contextLength": 32768,
         "envKey": "OPENAI_API_KEY",
@@ -230,7 +254,7 @@ Full file with all local models:
     ]
   },
   "model": {
-    "name": "qwen3-8b-32k",
+    "name": "qwen3-8b-64k",
     "chatCompression": { "contextPercentageThreshold": 0.5 }
   },
   "$version": 3
@@ -238,15 +262,21 @@ Full file with all local models:
 ```
 
 `chatCompression.contextPercentageThreshold: 0.15` triggers context compression
-when 15% of the window remains (~4900 tokens at 32k), preventing silent truncation.
+when 15% of the window remains, for example around `9800` tokens at 64k,
+preventing silent truncation.
 
 ### Usage
 
 ```bash
-qwen -m qwen3-8b-32k -y        # YOLO (agent) mode, recommended
-qwen -m qwen3-8b-32k           # interactive, approve each tool call
-qwen                           # uses default model (qwen3-8b-32k)
+qwen -m qwen3-8b-64k           # recommended
+qwen -m qwen3-8b-32k           # optional lower-context variant
+qwen -m qwen2.5-coder-7b-32k -y
+qwen                           # uses default model (qwen3-8b-64k)
 ```
+
+`qwen3` generally does not require `-y` here because Ollama already exposes
+native tool calls for it. The `qwen2.5-coder-7b-32k` fallback is the one that
+benefits more from the proxy in agent-style flows.
 
 ---
 
@@ -282,6 +312,7 @@ through the proxy (recommended); the `ollama` provider goes direct.
         "baseURL": "http://127.0.0.1:11434/v1"
       },
       "models": {
+        "qwen3-8b-64k": { "name": "qwen3-8b-64k", "tools": true },
         "qwen3-8b-32k": { "name": "qwen3-8b-32k", "tools": true },
         "qwen2.5-coder-7b-32k": { "name": "qwen2.5-coder-7b-32k", "tools": true }
       }
@@ -293,6 +324,7 @@ through the proxy (recommended); the `ollama` provider goes direct.
         "baseURL": "http://127.0.0.1:8100/v1"
       },
       "models": {
+        "qwen3-8b-64k": { "name": "qwen3-8b-64k", "tools": true },
         "qwen3-8b-32k": { "name": "qwen3-8b-32k", "tools": true },
         "qwen2.5-coder-7b-32k": { "name": "qwen2.5-coder-7b-32k", "tools": true },
         "qwen2.5-coder-7b-q4": { "name": "qwen2.5-coder-7b-q4", "tools": true },
@@ -311,13 +343,13 @@ through the proxy (recommended); the `ollama` provider goes direct.
 ```bash
 # Non-interactive (recommended for scripting)
 ~/.opencode/bin/opencode run \
-  --model ollama-proxy/qwen3-8b-32k \
+  --model ollama-proxy/qwen3-8b-64k \
   --dangerously-skip-permissions \
   "your task here"
 
 # Interactive TUI
 ~/.opencode/bin/opencode
-# Press / → select model → ollama-proxy/qwen3-8b-32k
+# Type /models → select model → ollama-proxy/qwen3-8b-64k
 ```
 
 `--dangerously-skip-permissions` auto-approves all tool calls. Omit to
@@ -387,7 +419,7 @@ To use a local Ollama model in OpenHands:
 - In the UI settings, set provider to **OpenAI-compatible**
 - Base URL: `http://host.docker.internal:11434/v1` (or `:8100` for proxy)
 - API key: `ollama`
-- Model: `qwen3-8b-32k`
+- Model: `qwen3-8b-64k`
 
 ### Workspace
 
@@ -408,7 +440,7 @@ State (conversation history, settings) persists in `~/.openhands-state/`.
 | `~/bin/openhands.sh` | OpenHands Docker run command |
 | `~/qwenrundemo/aarvam_lca/tool_calls_proxy.py` | Proxy source (FastAPI) |
 | `~/qwenrundemo/aarvam_lca/serve_tool_calls_proxy.sh` | Start proxy on port 8100 |
-| `~/qwenrundemo/aarvam_lca/setup_qwen_ollama_models.sh` | Register qwen2.5-coder-7b-32k in Ollama |
+| `~/qwenrundemo/aarvam_lca/setup_qwen_ollama_models.sh` | Register the qwen2.5-coder-7b-32k fallback in Ollama |
 
 ### Startup order
 
@@ -424,8 +456,9 @@ State (conversation history, settings) persists in `~/.openhands-state/`.
 
 | Model | Via | Context | Capabilities | Notes |
 |---|---|---|---|---|
-| `qwen3-8b-32k` | proxy `:8100` | 32k | tools, thinking | **Recommended** |
-| `qwen3-8b-32k-direct` | direct `:11434` | 32k | tools, thinking | Skip proxy (no bash fix) |
-| `qwen2.5-coder-7b-32k` | proxy `:8100` | 32k | tools | Fallback |
+| `qwen3-8b-64k` | proxy `:8100` | 64k | tools, thinking | **Recommended on this 12 GB Blackwell setup** |
+| `qwen3-8b-32k` | proxy `:8100` | 32k | tools, thinking | Lower-context option with the same base model |
+| `qwen3-8b-32k-direct` | direct `:11434` | 32k | tools, thinking | Skip proxy when you do not need the bash-field patch |
+| `qwen2.5-coder-7b-32k` | proxy `:8100` | 32k | tools | Fallback, and a possible fit for smaller mixed CPU+GPU setups |
 | `qwen2.5-coder-14b-q4` | proxy `:8100` | 15k | tools | Higher quality, short sessions |
 | `q3_32k.14:latest` | direct `:11434` | 32k | tools, thinking | Reasoning tasks |

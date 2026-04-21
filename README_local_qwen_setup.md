@@ -1,26 +1,30 @@
 # Local Qwen Agent Mode Setup
 
-Full setup for running small Qwen models as 32k-context coding agents in
+Full setup for running local Qwen models as large-context coding agents in
 **opencode**, using Ollama as the inference backend and a thin proxy to patch
 tool-call responses.
 
-> All models listed here are constructed locally — none are pre-built
-> downloadable "32k" variants. We take a standard Ollama model and set
-> `num_ctx 32768` to unlock the context window the weights already support.
+> All models listed here reuse existing Ollama models — none are newly
+> developed here or pre-built downloadable "32k" or "64k" variants. We
+> register local variants by taking a standard Ollama model and setting
+> `num_ctx` explicitly, because leaving the default on this setup fell back to
+> a much smaller usable context window.
 > The proxy and all scripts in this repo were written by Claude Code.
 
 ---
 
-## Recommended Model: `qwen3-8b-32k`
+## Recommended Model: `qwen3-8b-64k`
 
-`qwen3:8b` is the best small model for agent mode on this machine:
-- Native tool calling (proper OpenAI `tool_calls` format from Ollama)
+`qwen3:8b` is the practical recommendation on this machine because it balances
+context length against full-GPU fit:
+- Native tool calling through Ollama
 - `thinking` capability
-- 8B parameters, 5.2 GB — fits comfortably in 12 GB VRAM
-- Reliably completes multi-step tasks (write file → run → capture output)
+- 8B parameters, 5.2 GB — leaves room to keep the model fully on this 12 GB GPU
+- In practice here, explicit `num_ctx 32768` and `num_ctx 65536` both worked, while leaving the base model at defaults fell back to `4096`
+- Compared with `qwen2.5-coder-7b-32k`, Qwen3 8B showed materially stronger coding quality in local testing
 
-`qwen2.5-coder-7b-32k` is kept as a fallback but produces lower-quality
-output and requires more proxy intervention to get tool calls working.
+`qwen2.5-coder-7b-32k` is still kept as a fallback, especially for smaller
+CPU+GPU hardware where an even smaller model may be the safer fit.
 
 ---
 
@@ -54,11 +58,22 @@ pip install fastapi uvicorn httpx
 
 ## Step 1 — Pull and Register Models
 
-### qwen3-8b-32k (recommended)
+### qwen3-8b-64k (recommended)
 
 ```bash
 ollama pull qwen3:8b   # 5.2 GB, one-time download
 
+cat > /tmp/Modelfile-qwen3-8b-64k << 'EOF'
+FROM qwen3:8b
+PARAMETER num_ctx 65536
+EOF
+
+ollama create qwen3-8b-64k -f /tmp/Modelfile-qwen3-8b-64k
+```
+
+### qwen3-8b-32k (optional lower-context variant)
+
+```bash
 cat > /tmp/Modelfile-qwen3-8b-32k << 'EOF'
 FROM qwen3:8b
 PARAMETER num_ctx 32768
@@ -89,7 +104,7 @@ cd ~/qwenrundemo/aarvam_lca && ./setup_qwen_ollama_models.sh
 Verify capabilities:
 
 ```bash
-curl -s http://localhost:11434/api/show -d '{"name":"qwen3-8b-32k"}' \
+curl -s http://localhost:11434/api/show -d '{"name":"qwen3-8b-64k"}' \
     | python3 -c "import sys,json; print(json.load(sys.stdin).get('capabilities', []))"
 # Expected: ['completion', 'tools', 'thinking']
 ```
@@ -136,6 +151,12 @@ Both models are registered in the `ollama-proxy` provider in
 ```bash
 # Recommended
 ~/.opencode/bin/opencode run \
+  --model ollama-proxy/qwen3-8b-64k \
+  --dangerously-skip-permissions \
+  "your task here"
+
+# Optional 32k variant
+~/.opencode/bin/opencode run \
   --model ollama-proxy/qwen3-8b-32k \
   --dangerously-skip-permissions \
   "your task here"
@@ -151,7 +172,7 @@ Both models are registered in the `ollama-proxy` provider in
 
 ```bash
 ~/.opencode/bin/opencode
-# Press / → select model → ollama-proxy/qwen3-8b-32k
+# Type /models → select model → ollama-proxy/qwen3-8b-64k
 ```
 
 > `--dangerously-skip-permissions` auto-approves all tool calls without prompting.
@@ -164,9 +185,14 @@ Both models are registered in the `ollama-proxy` provider in
 Both models are registered in `~/.qwen/settings.json` pointing at the proxy.
 
 ```bash
-qwen -m qwen3-8b-32k -y       # YOLO (agent) mode, recommended
+qwen -m qwen3-8b-64k          # recommended
+qwen -m qwen3-8b-32k          # optional lower-context variant
 qwen -m qwen2.5-coder-7b-32k -y
 ```
+
+`qwen3` generally does not need `-y` here because Ollama already exposes native
+tool calls for it. The `qwen2.5-coder-7b-32k` fallback is the one that benefits
+more from running through the proxy in agent-style flows.
 
 ---
 
@@ -199,11 +225,12 @@ To extend, edit `_REQUIRED_ARGS` near the top of `tool_calls_proxy.py`.
 
 ## Model Reference
 
-| Model | Size | Context | Capabilities | Quality |
+| Model | Size | Context | Capabilities | Notes |
 |---|---|---|---|---|
-| `qwen3-8b-32k` | 5.2 GB | 32k | tools, thinking | **Recommended** |
-| `qwen2.5-coder-7b-32k` | 4.7 GB | 32k | tools | Fallback |
-| `qwen2.5-coder-14b-q4` | 9 GB | 15k | tools | Higher quality, short sessions |
+| `qwen3-8b-64k` | 5.2 GB | 64k | tools, thinking | **Recommended on this 12 GB Blackwell setup** |
+| `qwen3-8b-32k` | 5.2 GB | 32k | tools, thinking | Lower-context option with the same base model |
+| `qwen2.5-coder-7b-32k` | 4.7 GB | 32k | tools | Fallback, and a possible fit for smaller CPU+GPU machines |
+| `qwen2.5-coder-14b-q4` | 9 GB | 15k | tools | Higher quality per token, but shorter practical context in vLLM here |
 | `q3_32k.14:latest` | 9.3 GB | 32k | tools, thinking | Reasoning tasks |
 
 All models via the proxy on port 8100. The proxy and vLLM share port 8100 —

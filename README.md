@@ -1,8 +1,3 @@
-Tech Aarvam  
-Copyright (c) 2026 Tech Aarvam.  
-Primary authors: Ram (Ramasubramanian B), Claude Code  
-Additional support: Codex
-
 # aarvam_lca
 
 Local Qwen tooling for two serving paths:
@@ -28,3 +23,10 @@ benchmark, and experiment notes are kept under `vllm/` as secondary material.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+---
+
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Primary authors: Ram (Ramasubramanian B), Claude Code  
+Additional support: Codex

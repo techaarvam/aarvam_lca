@@ -1,8 +1,3 @@
-Tech Aarvam  
-Copyright (c) 2026 Tech Aarvam.  
-Primary authors: Ram (Ramasubramanian B), Claude Code  
-Additional support: Codex
-
 # Project Report: Local Coding Agent on Blackwell 5070 12 GB
 
 This writeup captures the practical findings from setting up a local coding
@@ -101,18 +96,23 @@ vLLM does support a tool-calls conversion plugin. That capability was the main
 reason it was explored here, especially to try to get Qwen 2.5 working across
 more favorite agent frontends.
 
-The vLLM experiments ran into two issues:
+The vLLM experiments ran into two blocking issues on this Blackwell setup:
 
-1. FP8 on `sm_120a` Blackwell was not supported in the installed CUDA kernel.
-2. Using `VLLM_ATTENTION_BACKEND=TORCH_SDPA` helped and made the setup
-   functional.
+1. Only the fp8 KV cache kernel compiled successfully on `sm_120a`. Non-fp8
+   attention backends — including `VLLM_ATTENTION_BACKEND=TORCH_SDPA` — failed
+   with a `cudaErrorUnsupportedPtxVersion` PTX compilation error.
+2. The fp8 KV cache path produced garbled output with Qwen 2.5 7B due to its
+   7:1 GQA ratio (28 query heads / 4 KV heads). The 14B variant (5:1 GQA)
+   was unaffected.
 
-Since the recommended Qwen 3.5 / Qwen 3 8B class model fits within the GPU,
-vLLM is still clearly an option on this machine.
+These two issues combined blocked Qwen 2.5 7B on vLLM for this machine. The
+pivot to Ollama followed from there. Since the recommended Qwen 3 8B class
+model has a different architecture, vLLM remains worth revisiting once the
+Blackwell fp8 kernel situation is better understood.
 
-TBD: compare token throughput between vLLM and Ollama another day. The FP8
-kernel issue may need a fix before vLLM can reach its full throughput
-advantage here.
+TBD: compare token throughput between vLLM and Ollama once vLLM is confirmed
+stable on this Blackwell setup — the PTX and fp8 GQA issues need to be resolved
+or worked around before a meaningful comparison is possible.
 
 ### Coding Agent Frontend
 
@@ -176,6 +176,18 @@ The practical recommendation from these experiments is:
 - 64K context length when possible
 - aggressive but still usable quantization
 
+Observed runtime evidence from this setup:
+
+```bash
+((pyenv1)) ~/.qwen % ollama ps
+NAME                   ID              SIZE      PROCESSOR    CONTEXT    UNTIL
+qwen3-8b-64k:latest    1adc23451bf4    8.8 GB    100% GPU     40960      Forever
+```
+
+This is a concrete check that the recommended Qwen 3 8B configuration can sit
+fully on the GPU on this Blackwell 5070 / 12 GB machine, with a practical
+loaded context window of `40960` in that observed run.
+
 ## Practical Recommendation
 
 For this Blackwell 5070 / 12 GB setup, the most practical direction is:
@@ -204,3 +216,10 @@ For this Blackwell 5070 / 12 GB setup, the most practical direction is:
 - test whether 3-bit quantizations can extend context or model quality tradeoffs
 - expand the comparison matrix beyond Qwen once the tool-call variables are more
   controlled
+
+---
+
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Author: Ram (Ramasubramanian B)  
+AI assistants: Claude Code, Codex

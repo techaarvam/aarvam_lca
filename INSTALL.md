@@ -1,8 +1,3 @@
-Tech Aarvam  
-Copyright (c) 2026 Tech Aarvam.  
-Primary authors: Ram (Ramasubramanian B), Claude Code  
-Additional support: Codex
-
 # Local AI Agent Stack — Installation & Configuration
 
 Full setup guide for running local Qwen models as coding agents on an RTX 5070
@@ -467,3 +462,10 @@ State (conversation history, settings) persists in `~/.openhands-state/`.
 | `qwen2.5-coder-7b-32k` | proxy `:8100` | 32k | tools | Fallback, and a possible fit for smaller mixed CPU+GPU setups |
 | `qwen2.5-coder-14b-q4` | proxy `:8100` | 15k | tools | Higher quality, short sessions |
 | `q3_32k.14:latest` | direct `:11434` | 32k | tools, thinking | Reasoning tasks |
+
+---
+
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Primary authors: Ram (Ramasubramanian B), Claude Code  
+Additional support: Codex

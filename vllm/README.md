@@ -1,8 +1,3 @@
-Tech Aarvam  
-Copyright (c) 2026 Tech Aarvam.  
-Primary authors: Ram (Ramasubramanian B), Claude Code  
-Additional support: Codex
-
 # vLLM Qwen XML Tool Adapter
 
 This repo now includes a vLLM tool parser plugin that converts Qwen 2.5/3
@@ -97,3 +92,10 @@ curl http://127.0.0.1:8100/v1/chat/completions \
 
 If the model emits Qwen XML, vLLM responses will expose standard OpenAI
 `tool_calls` instead of raw `<tool_call>...</tool_call>` text.
+
+---
+
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Primary authors: Ram (Ramasubramanian B), Claude Code  
+Additional support: Codex

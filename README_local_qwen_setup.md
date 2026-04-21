@@ -1,8 +1,3 @@
-Tech Aarvam  
-Copyright (c) 2026 Tech Aarvam.  
-Primary authors: Ram (Ramasubramanian B), Claude Code  
-Additional support: Codex
-
 # Local Qwen Agent Mode Setup
 
 Full setup for running local Qwen models as large-context coding agents in
@@ -26,6 +21,17 @@ context length against full-GPU fit:
 - `thinking` capability
 - 8B parameters, 5.2 GB — leaves room to keep the model fully on this 12 GB GPU
 - In practice here, explicit `num_ctx 32768` and `num_ctx 65536` both worked, while leaving the base model at defaults fell back to `4096`
+- Observed runtime snapshot on this setup:
+
+```bash
+((pyenv1)) ~/.qwen % ollama ps
+NAME                   ID              SIZE      PROCESSOR    CONTEXT    UNTIL
+qwen3-8b-64k:latest    1adc23451bf4    8.8 GB    100% GPU     40960      Forever
+```
+
+  This is a useful sanity check that the recommended model fits fully on the
+  GPU in a practical coding-agent configuration, with a loaded context window
+  of `40960` in that session.
 - Compared with `qwen2.5-coder-7b-32k`, Qwen3 8B showed materially stronger coding quality in local testing
 
 `qwen2.5-coder-7b-32k` is still kept as a fallback, especially for smaller
@@ -240,3 +246,10 @@ To extend, edit `_REQUIRED_ARGS` near the top of `tool_calls_proxy.py`.
 
 All models via the proxy on port 8100. The proxy and vLLM share port 8100 —
 run only one at a time.
+
+---
+
+Tech Aarvam  
+Copyright (c) 2026 Tech Aarvam.  
+Primary authors: Ram (Ramasubramanian B), Claude Code  
+Additional support: Codex

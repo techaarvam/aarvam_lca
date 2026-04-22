@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import time
 import uuid
 
@@ -127,6 +128,53 @@ def _looks_like_tool_calls(text: str) -> list[dict] | None:
             results.append(tc)
 
     return results if results else None
+
+
+_TOOLS_NOT_SUPPORTED_MSG = "does not support tools"
+
+
+def _tools_to_system_prompt(tools: list[dict]) -> str:
+    """Convert OpenAI-format tools list into a system-prompt tool description."""
+    lines = [
+        "You have access to tools. To call a tool, output ONLY a JSON object "
+        '(no other text) with "name" and "arguments" keys. Example:\n'
+        '{"name": "tool_name", "arguments": {"param": "value"}}\n\n'
+        "Available tools:"
+    ]
+    for t in tools:
+        fn = t.get("function", t)
+        name = fn.get("name", "?")
+        desc = fn.get("description", "")
+        params = fn.get("parameters", {})
+        props = params.get("properties", {})
+        required = params.get("required", [])
+        param_desc = ", ".join(
+            f"{k}({'required' if k in required else 'optional'}): {v.get('description', v.get('type', ''))}"
+            for k, v in props.items()
+        )
+        lines.append(f"- {name}: {desc}. Parameters: {param_desc}")
+    return "\n".join(lines)
+
+
+def _inject_tools_into_messages(req_json: dict) -> dict:
+    """
+    Strip the 'tools' field and inject tool descriptions into the system message.
+    Returns a new request dict suitable for models that don't support native tools.
+    """
+    tools = req_json.get("tools", [])
+    tool_system = _tools_to_system_prompt(tools)
+
+    messages = list(req_json.get("messages", []))
+    if messages and messages[0].get("role") == "system":
+        messages[0] = {**messages[0], "content": messages[0]["content"] + "\n\n" + tool_system}
+    else:
+        messages = [{"role": "system", "content": tool_system}] + messages
+
+    new_req = {k: v for k, v in req_json.items() if k != "tools"}
+    new_req["messages"] = messages
+    # Also strip tool_choice if present
+    new_req.pop("tool_choice", None)
+    return new_req
 
 
 _REQUIRED_ARGS: dict[str, dict] = {
@@ -250,6 +298,19 @@ async def proxy(request: Request, path: str):
     headers = dict(request.headers)
     headers.pop("host", None)
 
+    # Log every request
+    print(f"[REQ] {request.method} /{path}", flush=True)
+    if body and request.method == "POST":
+        try:
+            preview = json.loads(body)
+            model = preview.get("model", "?")
+            stream = preview.get("stream", False)
+            msgs = len(preview.get("messages", []))
+            tools = len(preview.get("tools", []))
+            print(f"      model={model} stream={stream} msgs={msgs} tools={tools}", flush=True)
+        except Exception:
+            print(f"      body(raw)={body[:200]}", flush=True)
+
     # Only intercept chat completions
     if path != "v1/chat/completions" or request.method != "POST":
         async with httpx.AsyncClient(timeout=300) as client:
@@ -267,6 +328,11 @@ async def proxy(request: Request, path: str):
     except Exception:
         req_json = {}
 
+    # All named models have num_ctx baked into their Modelfile; do not override.
+    # Re-encode body in case it was modified elsewhere.
+    body = json.dumps(req_json).encode()
+    headers["content-length"] = str(len(body))
+
     streaming = req_json.get("stream", False)
     has_tools = bool(req_json.get("tools"))
 
@@ -275,6 +341,11 @@ async def proxy(request: Request, path: str):
         async with httpx.AsyncClient(timeout=300) as client:
             resp = await client.post(url, headers=headers, content=body)
         if streaming:
+            print(f"[RSP] no-tools streaming status={resp.status_code} len={len(resp.content)}", flush=True)
+            # Log last few data lines
+            for line in resp.content.decode(errors="replace").splitlines()[-5:]:
+                if line.startswith("data:"):
+                    print(f"      {line[:200]}", flush=True)
             return Response(content=resp.content, status_code=resp.status_code,
                             media_type="text/event-stream")
         return Response(content=resp.content, status_code=resp.status_code,
@@ -288,6 +359,19 @@ async def proxy(request: Request, path: str):
             data = resp.json()
         except Exception:
             return Response(content=resp.content, status_code=resp.status_code)
+
+        # Retry with tools injected into system prompt if model rejects native tools
+        if _TOOLS_NOT_SUPPORTED_MSG in str(data.get("error", {}).get("message", "")):
+            print("[RTY] model rejected tools — retrying with system-prompt injection", flush=True)
+            fallback_req = _inject_tools_into_messages(req_json)
+            fallback_body = json.dumps(fallback_req).encode()
+            fallback_headers = {**headers, "content-length": str(len(fallback_body))}
+            async with httpx.AsyncClient(timeout=300) as client:
+                resp = await client.post(url, headers=fallback_headers, content=fallback_body)
+            try:
+                data = resp.json()
+            except Exception:
+                return Response(content=resp.content, status_code=resp.status_code)
 
         choice = data.get("choices", [{}])[0]
         msg = choice.get("message", {})
@@ -304,6 +388,10 @@ async def proxy(request: Request, path: str):
         else:
             data = _patch_native_tool_calls(data)
 
+        choice0 = data.get("choices", [{}])[0]
+        finish = choice0.get("finish_reason", "?")
+        usage = data.get("usage", {})
+        print(f"[RSP] finish={finish} usage={usage}", flush=True)
         return Response(
             content=json.dumps(data),
             status_code=resp.status_code,
@@ -316,10 +404,14 @@ async def proxy(request: Request, path: str):
         last_chunk = None
         content_parts = []
         is_tool_call_stream = False  # set if upstream returns proper tool_calls
+        active_body = body
+        active_headers = headers
 
         async with httpx.AsyncClient(timeout=300) as client:
-            async with client.stream("POST", url, headers=headers, content=body) as resp:
+            async with client.stream("POST", url, headers=active_headers, content=active_body) as resp:
+                raw_lines = []
                 async for line in resp.aiter_lines():
+                    raw_lines.append(line)
                     if not line.startswith("data: "):
                         continue
                     data_str = line[6:]
@@ -340,6 +432,42 @@ async def proxy(request: Request, path: str):
                     if delta.get("content"):
                         content_parts.append(delta["content"])
 
+        # If no chunks but we got a non-data error line, check for "does not support tools"
+        if not chunks:
+            error_text = " ".join(raw_lines)
+            if _TOOLS_NOT_SUPPORTED_MSG in error_text:
+                print("[RTY] stream: model rejected tools — retrying with system-prompt injection", flush=True)
+                fallback_req = _inject_tools_into_messages(req_json)
+                fallback_body = json.dumps(fallback_req).encode()
+                fallback_headers = {**active_headers, "content-length": str(len(fallback_body))}
+                async with httpx.AsyncClient(timeout=300) as client:
+                    async with client.stream("POST", url, headers=fallback_headers, content=fallback_body) as resp2:
+                        async for line in resp2.aiter_lines():
+                            if not line.startswith("data: "):
+                                continue
+                            data_str = line[6:]
+                            if data_str == "[DONE]":
+                                break
+                            try:
+                                chunk = json.loads(data_str)
+                            except Exception:
+                                continue
+                            chunks.append(chunk)
+                            choices = chunk.get("choices", [])
+                            if not choices:
+                                continue
+                            last_chunk = chunk
+                            delta = choices[0].get("delta", {})
+                            if delta.get("tool_calls"):
+                                is_tool_call_stream = True
+                            if delta.get("content"):
+                                content_parts.append(delta["content"])
+
+        print(f"[STR] chunks={len(chunks)} is_tool_call_stream={is_tool_call_stream} content_len={len(''.join(content_parts))}", flush=True)
+        if last_chunk:
+            lc_finish = (last_chunk or {}).get("choices", [{}])[0].get("finish_reason", "?")
+            print(f"      last_chunk finish={lc_finish}", flush=True)
+
         if is_tool_call_stream:
             # Already proper tool_calls stream — patch args then pass through
             for c in chunks:
@@ -354,10 +482,12 @@ async def proxy(request: Request, path: str):
         if finish == "stop" and full_content:
             tc = _looks_like_tool_calls(full_content)
             if tc and last_chunk:
+                print(f"      rewriting as tool_calls: {[t['name'] for t in tc]}", flush=True)
                 yield _build_tool_calls_stream_chunk(last_chunk, tc)
                 return
 
         # Not a tool call — pass through original chunks
+        print(f"      passthrough {len(chunks)} chunks", flush=True)
         for c in chunks:
             yield f"data: {json.dumps(c)}\n\n"
         yield "data: [DONE]\n\n"

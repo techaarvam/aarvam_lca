@@ -45,13 +45,43 @@ export OPENROUTER_API_KEY=sk-or-v1-...
 
 The proxy listens on `http://127.0.0.1:8200` and is compatible with any OpenAI-SDK client.
 
-## Using with  opencode
+## Using with opencode
+
+### Option 1: Command line (quick test)
 
 ```bash
-
-# Or with opencode
 opencode --model openrouter-free/current-free-model
 ```
+
+### Option 2: Persistent configuration (recommended)
+
+Add the following to your `~/.config/opencode/opencode.json`:
+
+```json
+{
+  "model": "openrouter-free/current-free-model",
+  "provider": {
+    "openrouter-free": {
+      "name": "OpenRouter-Free",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:8200/v1"
+      },
+      "models": {
+        "current-free-model": {
+          "name": "current-free-model",
+          "tools": true
+        }
+      }
+    }
+  }
+}
+```
+
+This configuration:
+- Sets `current-free-model` as your default model
+- Points to the proxy running on `http://127.0.0.1:8200`
+- Enables tool calling support for coding agent workflows
 
 ## Manual invocation
 

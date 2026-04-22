@@ -32,11 +32,14 @@ You also need an OpenRouter API key (free tier is sufficient): https://openroute
 ## Quick start
 
 ```bash
+# Clone the repository
+git clone https://github.com/techaarvam/aarvam_lca.git
+cd aarvam_lca/openrouter_free_proxy
+
 # Set your API key once
 export OPENROUTER_API_KEY=sk-or-v1-...
 
 # Start the proxy (port 8200)
-cd openrouter_free_proxy/
 ./serve_openrouter_free_proxy.sh
 ```
 

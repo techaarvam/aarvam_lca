@@ -48,7 +48,7 @@ VIRTUAL_MODEL = "current-free-model"
 DEFAULT_PORT = 8200
 
 # HTTP status codes that indicate a model is overloaded / unavailable
-FAILOVER_CODES = {429, 502, 503, 504, 529}
+FAILOVER_CODES = {400, 429, 502, 503, 504, 529}
 
 # How long a failing model stays out of rotation before being retried
 COOLDOWN_SECONDS = 300  # 5 minutes
@@ -445,8 +445,8 @@ async def _blocking_failover(req: dict, hdrs: dict, models: list[dict]) -> Respo
 
         try:
             data = r.json()
-            if "error" in data and _is_overloaded_json(data):
-                log.warning("[ROTATE] %s: overload in body", mid)
+            if "error" in data:
+                log.warning("[ROTATE] %s: error in body: %s", mid, data["error"])
                 registry.mark_failed(mid)
                 failed.append(mid)
                 continue
@@ -502,8 +502,9 @@ async def _streaming_failover(
                     if buf and not buf.lstrip().startswith(b"data:"):
                         try:
                             data = json.loads(buf.decode(errors="replace").strip())
-                            if "error" in data and _is_overloaded_json(data):
-                                log.warning("[ROTATE-S] %s: overload in body", mid)
+                            if "error" in data:
+                                log.warning("[ROTATE-S] %s: error in body: %s",
+                                            mid, data["error"])
                                 registry.mark_failed(mid)
                                 failed.append(mid)
                                 continue

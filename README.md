@@ -26,6 +26,16 @@ MIT. See [LICENSE](LICENSE).
 
 ---
 
+### Fascinating Proxy Context Behavior
+
+**Observation:** OpenCode's proxy system automatically injects context-aware responses into the tool output, even when the script doesn't explicitly code for this behavior.
+
+**Example:** When the model rotated from `qwen/qwen3-coder:free` to `arcee-ai/trinity-large-preview:free`, OpenCode automatically added a contextual message about the rotation, demonstrating intelligent context injection without explicit scripting.
+
+**Implication:** This shows how OpenCode's proxy layer can enhance tooling with contextual awareness, creating emergent behaviors that improve user experience beyond the base script functionality.
+
+---
+
 Tech Aarvam  
 Copyright (c) 2026 Tech Aarvam.  
 Primary authors: Ram (Ramasubramanian B), Claude Code  

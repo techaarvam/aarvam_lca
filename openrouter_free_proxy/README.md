@@ -94,11 +94,7 @@ curl http://127.0.0.1:8200/v1/chat/completions \
 
 ## Streaming
 
-Pass `"stream": true` in the request body. When the proxy rotates mid-request, it injects a brief markdown notice at the start of the stream before forwarding the real response:
-
-```
-> ⚡ Proxy rotated: `model-a` was unavailable — now using `model-b`
-```
+Pass `"stream": true` in the request body. On rotation, a one-line notice is prepended to the response indicating which model was substituted.
 
 ## Configuration (env vars / flags)
 

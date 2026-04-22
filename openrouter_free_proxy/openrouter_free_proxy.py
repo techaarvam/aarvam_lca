@@ -168,6 +168,8 @@ async def _fetch_models() -> list[dict]:
 # Model registry with daily refresh
 # ---------------------------------------------------------------------------
 
+COOLDOWN_MAX_SECONDS = 7200  # 2-hour ceiling for exponential backoff
+
 class ModelRegistry:
     def __init__(self):
         self._models: list[dict] = []
@@ -175,13 +177,21 @@ class ModelRegistry:
         self._last_refresh: datetime = datetime.min
         # model_id → datetime when cooldown expires
         self._cooldowns: dict[str, datetime] = {}
+        # model_id → consecutive failure count (for backoff)
+        self._fail_counts: dict[str, int] = {}
 
     def mark_failed(self, model_id: str) -> None:
-        until = datetime.now() + timedelta(seconds=COOLDOWN_SECONDS)
+        count = self._fail_counts.get(model_id, 0) + 1
+        self._fail_counts[model_id] = count
+        # Exponential backoff: 5m → 10m → 20m → … capped at 2h
+        seconds = min(COOLDOWN_SECONDS * (2 ** (count - 1)), COOLDOWN_MAX_SECONDS)
+        until = datetime.now() + timedelta(seconds=seconds)
         self._cooldowns[model_id] = until
-        log.warning("[COOLDOWN] %s benched until %s", model_id, until.strftime("%H:%M:%S"))
+        log.warning("[COOLDOWN] %s benched until %s (failure #%d, %ds)",
+                    model_id, until.strftime("%H:%M:%S"), count, seconds)
 
     def mark_ok(self, model_id: str) -> None:
+        self._fail_counts.pop(model_id, None)
         if model_id in self._cooldowns:
             del self._cooldowns[model_id]
             log.info("[RECOVERED] %s back in active rotation", model_id)
@@ -208,7 +218,11 @@ class ModelRegistry:
     def cooldown_status(self) -> list[dict]:
         now = datetime.now()
         return [
-            {"id": mid, "seconds_remaining": max(0, int((until - now).total_seconds()))}
+            {
+                "id": mid,
+                "seconds_remaining": max(0, int((until - now).total_seconds())),
+                "consecutive_failures": self._fail_counts.get(mid, 0),
+            }
             for mid, until in self._cooldowns.items()
         ]
 

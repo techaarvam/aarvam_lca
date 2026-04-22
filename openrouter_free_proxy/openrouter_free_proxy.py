@@ -25,6 +25,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import sys
 import time
 from datetime import datetime, timedelta
@@ -55,10 +56,39 @@ COOLDOWN_SECONDS = 300  # 5 minutes
 # Meta-routers and non-text-generation models to exclude even if free+programming
 EXCLUDE_IDS = {"openrouter/free", "google/lyria-3-pro-preview", "google/lyria-3-clip-preview"}
 
+# Regex to extract parameter counts (e.g. "120B", "480B", "7.4B") from model text.
+# We take the maximum value found — for MoE models that's the total param count.
+_PARAM_RE = re.compile(r'(\d+(?:\.\d+)?)\s*[Bb](?!ytes)', re.IGNORECASE)
+
+LARGE_MODEL_THRESHOLD_B = 100  # models above this (total params) get priority
+
 log = logging.getLogger("or-free-proxy")
 
 # Set by main() before uvicorn starts
 OPENROUTER_API_KEY: str = ""
+
+# ---------------------------------------------------------------------------
+# Parameter count helpers
+# ---------------------------------------------------------------------------
+
+def _max_params_b(model: dict) -> float:
+    """
+    Extract the largest parameter count (billions) from model id, name, description.
+    For MoE models the maximum value is always the total param count.
+    Returns 0.0 if nothing parseable is found.
+    """
+    text = (
+        f"{model.get('id', '')} "
+        f"{model.get('name', '')} "
+        f"{model.get('description', '')[:400]}"
+    )
+    hits = [float(v) for v in _PARAM_RE.findall(text) if float(v) >= 1.0]
+    return max(hits) if hits else 0.0
+
+
+def _is_large(model: dict) -> bool:
+    return _max_params_b(model) > LARGE_MODEL_THRESHOLD_B
+
 
 # ---------------------------------------------------------------------------
 # Model discovery
@@ -115,11 +145,23 @@ async def _fetch_models() -> list[dict]:
             continue
         result.append(m)
 
-    # Sort: larger context first, stable tie-break by id
-    result.sort(key=lambda m: (-int(m.get("context_length") or 0), m.get("id", "")))
-    log.info("Discovered %d free programming models:", len(result))
+    # Sort: >100B models first (by param count desc), then smaller models.
+    # Within each tier, prefer larger context windows.
+    result.sort(key=lambda m: (
+        0 if _is_large(m) else 1,       # large tier first
+        -_max_params_b(m),               # biggest model within tier first
+        -int(m.get("context_length") or 0),
+        m.get("id", ""),
+    ))
+
+    large = [m for m in result if _is_large(m)]
+    small = [m for m in result if not _is_large(m)]
+    log.info("Discovered %d free programming models (%d >%dB, %d smaller):",
+             len(result), len(large), LARGE_MODEL_THRESHOLD_B, len(small))
     for m in result:
-        log.info("  %-60s  ctx=%s", m["id"], m.get("context_length", "?"))
+        params = _max_params_b(m)
+        tag = f">100B {params:.0f}B" if _is_large(m) else f"      {params:.0f}B"
+        log.info("  [%s]  %-55s  ctx=%s", tag, m["id"], m.get("context_length", "?"))
     return result
 
 # ---------------------------------------------------------------------------
@@ -294,6 +336,8 @@ async def status():
         "models": [
             {
                 "id": m["id"],
+                "params_b": _max_params_b(m) or None,
+                "large": _is_large(m),
                 "context_length": m.get("context_length"),
                 "status": "cooling" if m["id"] in cooling_ids else "active",
             }
@@ -444,9 +488,12 @@ async def _streaming_failover(
                         failed.append(mid)
                         continue
 
-                    # Buffer ~512 bytes to detect a JSON error body before committing
+                    # Use a single iterator — calling aiter_bytes() twice raises StreamConsumed
+                    stream_iter = r.aiter_bytes(4096)
+
+                    # Buffer until we have enough to detect a JSON error vs real SSE
                     buf = b""
-                    async for chunk in r.aiter_bytes(512):
+                    async for chunk in stream_iter:
                         buf += chunk
                         if len(buf) >= 512 or b"\n" in buf:
                             break
@@ -471,7 +518,7 @@ async def _streaming_failover(
                         yield _rotation_note_chunk(failed, mid)
 
                     yield buf
-                    async for chunk in r.aiter_bytes(4096):
+                    async for chunk in stream_iter:  # continue same iterator
                         yield chunk
                     return
 

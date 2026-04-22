@@ -507,7 +507,7 @@ We are given the user's response: they want a new sub-directory named "nemotron1
 207:       "npm": "@ai-sdk/openai-compatible",
 208:       "options": {
 209:         "baseURL": "https://openrouter.ai/api/v1",
-210:         "apiKey": "sk-or-v1-REDACTED"
+210:         "apiKey": "YOUR_KEY_HERE"
 211:       },
 212:       "models": {
 213:         "qwen/qwen3-coder-next": {

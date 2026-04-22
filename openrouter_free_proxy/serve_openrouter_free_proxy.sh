@@ -17,7 +17,12 @@
 set -e
 cd "$(dirname "$0")"
 
-API_KEY="${OPENROUTER_API_KEY:-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}"
+if [ -z "$OPENROUTER_API_KEY" ]; then
+  echo "ERROR: OPENROUTER_API_KEY env var is not set." >&2
+  echo "  export OPENROUTER_API_KEY=sk-or-v1-..." >&2
+  exit 1
+fi
+API_KEY="$OPENROUTER_API_KEY"
 
 exec python3 openrouter_free_proxy.py \
   --api-key "$API_KEY" \

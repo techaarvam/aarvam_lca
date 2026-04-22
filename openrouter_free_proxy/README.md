@@ -18,7 +18,7 @@ A local OpenAI-compatible proxy that automatically discovers **currently availab
 - On startup, fetches all free programming models from OpenRouter (two-pass: category filter + pricing check).
 - Can be refreshed manually (e.g., with `--scan`) or on startup; the cache may be updated up to every 24 hours as needed.
 - Failing models (HTTP 429/502/503/504/529 or overload body) enter a **5-minute cooldown** before being retried.
-- Models are sorted by context length (largest first) so the best model is tried first.
+- Models are sorted by parameter size, context length (largest first) so the best model is tried first.
 - A cache file (`openrouter_free_models_cache.json`) is written alongside the script so the proxy can start offline and refresh later.
 
 ## Prerequisites
@@ -27,7 +27,7 @@ A local OpenAI-compatible proxy that automatically discovers **currently availab
 pip install fastapi uvicorn httpx
 ```
 
-You also need an OpenRouter API key (free tier is sufficient): https://openrouter.ai/keys
+You also need an OpenRouter API key: https://openrouter.ai/keys
 
 ## Quick start
 
@@ -45,11 +45,9 @@ export OPENROUTER_API_KEY=sk-or-v1-...
 
 The proxy listens on `http://127.0.0.1:8200` and is compatible with any OpenAI-SDK client.
 
-## Using with Claude Code / opencode
+## Using with  opencode
 
 ```bash
-# Point Claude Code at the proxy
-ANTHROPIC_BASE_URL=http://127.0.0.1:8200/v1 claude
 
 # Or with opencode
 opencode --model openrouter-free/current-free-model

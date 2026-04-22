@@ -27,7 +27,7 @@ A local OpenAI-compatible proxy that automatically discovers **currently availab
 pip install fastapi uvicorn httpx
 ```
 
-You also need an OpenRouter API key (free tier is sufficient): https://openrouter.ai/keys
+You also need an OpenRouter API key: https://openrouter.ai/keys
 
 ## Quick start
 

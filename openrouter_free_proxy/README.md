@@ -7,7 +7,7 @@ A local OpenAI-compatible proxy that automatically discovers **free, programming
 ## How it works
 
 - On startup, fetches all free programming models from OpenRouter (two-pass: category filter + pricing check).
-- Refreshes the model list every **24 hours** automatically.
+-     Can be refreshed manually (e.g., with `--scan`) or on startup; the cache may be updated up to every 24 hours as needed.
 - Failing models (HTTP 429/502/503/504/529 or overload body) enter a **5-minute cooldown** before being retried.
 - Models are sorted by context length (largest first) so the best model is tried first.
 - A cache file (`openrouter_free_models_cache.json`) is written alongside the script so the proxy can start offline and refresh later.

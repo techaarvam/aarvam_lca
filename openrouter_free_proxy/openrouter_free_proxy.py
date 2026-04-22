@@ -56,6 +56,10 @@ COOLDOWN_SECONDS = 300  # 5 minutes
 # Meta-routers and non-text-generation models to exclude even if free+programming
 EXCLUDE_IDS = {"openrouter/free", "google/lyria-3-pro-preview", "google/lyria-3-clip-preview"}
 
+# Include/Exclude filters for model selection (set via command line or environment)
+INCLUDE_LIST: set[str] = set()
+EXCLUDE_LIST: set[str] = set()
+
 # Regex to extract parameter counts (e.g. "120B", "480B", "7.4B") from model text.
 # We take the maximum value found — for MoE models that's the total param count.
 _PARAM_RE = re.compile(r'(\d+(?:\.\d+)?)\s*[Bb](?!ytes)', re.IGNORECASE)
@@ -127,6 +131,11 @@ async def _fetch_models() -> list[dict]:
     for m in r2.json().get("data", []):
         mid = m.get("id", "")
         if mid in EXCLUDE_IDS:
+            continue
+        # Apply include/exclude filters
+        if INCLUDE_LIST and mid not in INCLUDE_LIST:
+            continue
+        if EXCLUDE_LIST and mid in EXCLUDE_LIST:
             continue
         # Free: prompt price == "0"
         pricing = m.get("pricing", {})
@@ -594,7 +603,7 @@ async def _run_scan(api_key: str) -> None:
 # ---------------------------------------------------------------------------
 
 def main():
-    global OPENROUTER_API_KEY
+    global OPENROUTER_API_KEY, INCLUDE_LIST, EXCLUDE_LIST
 
     parser = argparse.ArgumentParser(
         description="OpenRouter free programming models proxy with daily refresh and failover."
@@ -605,12 +614,22 @@ def main():
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--scan", action="store_true",
                         help="Just scan and print free programming models, then exit")
+    parser.add_argument("--include", action="append", default=[],
+                        help="Include only models with these IDs (can be repeated or comma-separated)")
+    parser.add_argument("--exclude", action="append", default=[],
+                        help="Exclude models with these IDs (can be repeated or comma-separated)")
     args = parser.parse_args()
 
     OPENROUTER_API_KEY = args.api_key
     if not OPENROUTER_API_KEY:
         print("ERROR: --api-key or OPENROUTER_API_KEY env var required", file=sys.stderr)
         sys.exit(1)
+
+    # Process include/exclude lists (allow comma-separated values in each flag)
+    for item in args.include:
+        INCLUDE_LIST.update(part.strip() for part in item.split(",") if part.strip())
+    for item in args.exclude:
+        EXCLUDE_LIST.update(part.strip() for part in item.split(",") if part.strip())
 
     if args.scan:
         asyncio.run(_run_scan(args.api_key))
@@ -624,6 +643,10 @@ def main():
     log.info("Starting OpenRouter free proxy on %s:%d", args.host, args.port)
     log.info("Virtual model name: %s", VIRTUAL_MODEL)
     log.info("Model cache: %s", CACHE_FILE)
+    if INCLUDE_LIST:
+        log.info("Include filter active: %d models", len(INCLUDE_LIST))
+    if EXCLUDE_LIST:
+        log.info("Exclude filter active: %d models", len(EXCLUDE_LIST))
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
 
 

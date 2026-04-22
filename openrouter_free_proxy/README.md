@@ -11,6 +11,7 @@ A local OpenAI-compatible proxy that automatically discovers **currently availab
 - **OpenRouter Terms Apply**: Your usage is governed by OpenRouter's Terms of Service; free access may change or be discontinued at any time
 - **For commercial use**: Verify the specific upstream license for each model before using in products, redistribution, or fine-tuning
 - **Data policies vary**: Providers may have different logging/data retention policies; use OpenRouter's data policy filtering if needed
+- **License compliance**: Use `--include` and `--exclude` flags to filter models by ID to comply with specific licensing requirements or organizational policies
 
 ## How it works
 
@@ -112,6 +113,8 @@ Pass `"stream": true` in the request body. On rotation, a one-line notice is pre
 | `--port` | `8200` | Listening port |
 | `--host` | `127.0.0.1` | Listening host |
 | `--scan` | — | Print free models and exit |
+| `--include` | — | Comma-separated list of model IDs to include (if set, only these models are considered) |
+| `--exclude` | — | Comma-separated list of model IDs to exclude (these models are never selected) |
 
 Internal constants (edit `openrouter_free_proxy.py` to change):
 

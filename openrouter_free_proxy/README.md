@@ -2,7 +2,15 @@
 
 Copyright (c) 2026 Tech Aarvam. Primary authors: Ram (Ramasubramanian B), Claude Code
 
-A local OpenAI-compatible proxy that automatically discovers **free, programming-tagged, tool-call-capable** models on OpenRouter, exposes them as a single virtual model name `current-free-model`, and rotates to the next available model when one is overloaded or down.
+A local OpenAI-compatible proxy that automatically discovers **currently available free programming models** on OpenRouter (subject to rate limits and potential changes), exposes them as a single virtual model name `current-free-model`, and rotates to the next available model when one is overloaded or down.
+
+## ⚠️ Important Licensing & Usage Notes
+
+- **Free access ≠ unlimited**: Free models on OpenRouter are subject to rate limits (typically 50 requests/day, 20 requests/minute) and may be provider-throttled during peak times
+- **Model licenses vary**: Each model retains its original license from the provider (Apache 2.0, MIT, Llama Community License, NVIDIA Nemotron License, etc.) - check individual model pages for details
+- **OpenRouter Terms Apply**: Your usage is governed by OpenRouter's Terms of Service; free access may change or be discontinued at any time
+- **For commercial use**: Verify the specific upstream license for each model before using in products, redistribution, or fine-tuning
+- **Data policies vary**: Providers may have different logging/data retention policies; use OpenRouter's data policy filtering if needed
 
 ## How it works
 

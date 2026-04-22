@@ -42,11 +42,9 @@ cd openrouter_free_proxy/
 
 The proxy listens on `http://127.0.0.1:8200` and is compatible with any OpenAI-SDK client.
 
-## Using with Claude Code / opencode
+## Using with  opencode
 
 ```bash
-# Point Claude Code at the proxy
-ANTHROPIC_BASE_URL=http://127.0.0.1:8200/v1 claude
 
 # Or with opencode
 opencode --model openrouter-free/current-free-model

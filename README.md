@@ -3,7 +3,7 @@
 Local Qwen tooling for two serving paths:
 
 - `tool_calls_proxy.py`: Ollama proxy that rewrites tool-call output into OpenAI `tool_calls` — supports Qwen, Nemotron, and other local models
-- **Recommended model:** `nemotron-3-nano-128k` — 3.4× faster than qwen3-8b, genuine 128k context vs ~40k effective for qwen3 on 12 GB VRAM ([benchmark](logs/benchmark_20260425_qwen3_vs_nemotron.md))
+- **Recommended model:** `qwen3-8b-64k` — native tool calling, better for verbose explanations, 100% accuracy, effective context ~40k on 12 GB VRAM ([benchmark](logs/benchmark_20260425_qwen3_vs_nemotron.md))
 - `vllm/serve_qwen_toolcall.py`: vLLM launcher for the local Qwen GGUF models with the XML-to-tool-calls parser
 
 The primary workflow in this repo is the Ollama proxy path. The vLLM adapter,

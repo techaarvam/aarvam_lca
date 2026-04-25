@@ -57,15 +57,20 @@ A unique codename was hidden at the 90% position of a generated document. Both m
 
 ### Recommendation
 
-**For this 12 GB Blackwell setup, `nemotron-3-nano-128k` is the recommended daily driver:**
+**For this 12 GB Blackwell setup, `qwen3-8b-64k` is the recommended daily driver:**
 
+- Native tool calling without proxy reasoning-fallback path
+- Better for verbose, elaborated explanations (documentation, tutorials)
+- 100% accuracy on all benchmark tasks (same as nemotron)
+- Strong reasoning capabilities with thinking tokens support
+- Effective context of ~40k tokens on this GPU (limited by VRAM overhead)
+
+qwen3-8b-64k is preferred when response verbosity and elaboration are desired. nemotron-3-nano-128k remains useful for:
 - **3.4× faster** end-to-end across all task types
 - **3× more effective context** (128k vs ~40k actual) — critical for real codebases
 - Identical accuracy on all tested tasks
 - Smaller VRAM footprint leaves more headroom for the KV cache at large contexts
 - The tool-call proxy handles Nemotron's reasoning-stream quirk transparently
-
-qwen3-8b-64k remains useful when response verbosity and elaboration are preferred (documentation writing, step-by-step explanations), or as a fallback when the nemotron proxy path encounters issues.
 
 ---
 

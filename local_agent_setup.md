@@ -13,22 +13,21 @@ tool-call responses.
 
 ---
 
-## Recommended Model: `nemotron-3-nano-128k`
+## Recommended Model: `qwen3-8b-64k`
 
 Based on [benchmarking on 2026-04-25](logs/benchmark_20260425_qwen3_vs_nemotron.md),
-`nemotron-3-nano-128k` is the recommended daily driver on this 12 GB Blackwell setup:
+`qwen3-8b-64k` is the recommended daily driver on this 12 GB Blackwell setup:
 
-- **3.4× faster** than qwen3-8b-64k across all task types (29.8s vs 101.8s total)
-- **3× more effective context**: genuinely processes 131,072 tokens vs ~40k actual for qwen3
-- 4B parameters, ~7.1 GB VRAM — leaves more headroom for large KV caches
-- 100% accuracy on all benchmark tasks (same as qwen3)
-- Concise, direct responses — less token waste
-- 256k variant (`nemotron-3-nano-256k`) available for very long context tasks
+- Native tool calling without proxy reasoning-fallback path
+- Better for verbose, elaborated explanations (documentation, tutorials)
+- 100% accuracy on all benchmark tasks (same as nemotron)
+- Effective context of ~40k tokens on this GPU (limited by VRAM overhead)
+- Strong reasoning capabilities with thinking tokens support
 
-> **Why qwen3 doesn't reach its 64k spec:** Ollama loads `qwen3-8b-64k` at
+> **Note on context limitation:** Ollama loads `qwen3-8b-64k` at
 > **40,960** tokens on this GPU due to VRAM overhead. The KV cache for 65k context
-> at 8B parameters doesn't fit alongside the weights in 12 GB. Nemotron's 4B
-> weights leave enough VRAM to comfortably hold the 128k KV cache.
+> at 8B parameters doesn't fit alongside the weights in 12 GB. For true 64k+ context,
+> consider nemotron-3-nano-128k which has 4B parameters leaving more VRAM headroom.
 
 ```bash
 # Recommended
@@ -78,7 +77,7 @@ pip install fastapi uvicorn httpx
 
 ## Step 1 — Pull and Register Models
 
-### nemotron-3-nano-128k (recommended)
+### nemotron-3-nano-128k
 
 ```bash
 ollama pull nemotron-3-nano:4b   # ~3 GB, one-time download
@@ -90,7 +89,7 @@ PARAMETER num_ctx 65536
 EOF
 ollama create nemotron-3-nano-64k -f /tmp/Modelfile-nemotron-nano-64k
 
-# 128k variant (recommended)
+# 128k variant
 cat > /tmp/Modelfile-nemotron-nano-128k << 'EOF'
 FROM nemotron-3-nano:4b
 PARAMETER num_ctx 131072

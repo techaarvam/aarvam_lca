@@ -1,6 +1,6 @@
-# Local Qwen Agent Mode Setup
+# Local Agent Setup
 
-Full setup for running local Qwen models as large-context coding agents in
+Full setup for running local models (Nemotron, Qwen) as large-context coding agents in
 **opencode**, using Ollama as the inference backend and a thin proxy to patch
 tool-call responses.
 

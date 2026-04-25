@@ -35,16 +35,46 @@ DEFAULT_UPSTREAM = "http://localhost:11434"
 DEFAULT_PORT = 8100
 
 
-def _parse_single_tool_call(text: str) -> dict | None:
+# Non-argument fields the model sometimes adds alongside actual args
+_META = {"description", "workdir", "timeout", "cwd"}
+
+
+def _infer_tool_from_args(args: dict, tools: list[dict]) -> str | None:
+    """
+    Find the best-matching tool for an args-only dict by scoring parameter overlap.
+    Returns the tool name if at least half the (non-meta) arg keys match a tool's params.
+    """
+    arg_keys = {k.lower() for k in args if k.lower() not in _META}
+    if not arg_keys:
+        return None
+    best_name = None
+    best_score = 0.0
+    for t in tools:
+        fn = t.get("function", t)
+        name = fn.get("name", "")
+        props = fn.get("parameters", {}).get("properties", {})
+        param_keys = {k.lower() for k in props}
+        if not param_keys:
+            continue
+        overlap = len(arg_keys & param_keys)
+        score = overlap / len(arg_keys)
+        if score > best_score:
+            best_score = score
+            best_name = name
+    return best_name if best_score >= 0.5 else None
+
+
+def _parse_single_tool_call(text: str, fallback_tool_name: str | None = None,
+                             tools: list[dict] | None = None) -> dict | None:
     """Parse one JSON blob as a tool call, return {name, arguments} or None."""
     text = text.strip()
     try:
         obj = json.loads(text)
     except (json.JSONDecodeError, ValueError):
         return None
-    if isinstance(obj, dict) and "name" in obj and (
-        "arguments" in obj or "parameters" in obj
-    ):
+    if not isinstance(obj, dict):
+        return None
+    if "name" in obj and ("arguments" in obj or "parameters" in obj):
         args = obj.get("arguments") or obj.get("parameters") or {}
         if isinstance(args, str):
             try:
@@ -52,10 +82,19 @@ def _parse_single_tool_call(text: str) -> dict | None:
             except Exception:
                 pass
         return {"name": obj["name"], "arguments": args}
+    # Model emitted arguments-only JSON (no "name" key).
+    # Try explicit fallback first, then infer from the tools list by parameter matching.
+    if "name" not in obj:
+        candidate = fallback_tool_name or (_infer_tool_from_args(obj, tools) if tools else None)
+        if candidate:
+            args = {k: v for k, v in obj.items() if k.lower() not in _META}
+            if args:
+                return {"name": candidate, "arguments": args}
     return None
 
 
-def _looks_like_tool_calls(text: str) -> list[dict] | None:
+def _looks_like_tool_calls(text: str, fallback_tool_name: str | None = None,
+                            tools: list[dict] | None = None) -> list[dict] | None:
     """
     Return list of tool call dicts if text contains one or more bare tool call
     JSON objects (possibly wrapped in XML tags or a JSON array). Returns None if not.
@@ -104,7 +143,7 @@ def _looks_like_tool_calls(text: str) -> list[dict] | None:
 
     results = []
     for blob in blobs:
-        tc = _parse_single_tool_call(blob)
+        tc = _parse_single_tool_call(blob, fallback_tool_name, tools)
         if tc:
             results.append(tc)
 
@@ -115,7 +154,7 @@ def _looks_like_tool_calls(text: str) -> list[dict] | None:
     # Handles the case where the model wraps the JSON in explanatory text or a
     # markdown code fence mid-paragraph.
     for m in re.finditer(r'```(?:json|xml)?\s*(\{.*?\})\s*```', text, re.DOTALL):
-        tc = _parse_single_tool_call(m.group(1))
+        tc = _parse_single_tool_call(m.group(1), tools=tools)
         if tc:
             results.append(tc)
     if results:
@@ -123,7 +162,7 @@ def _looks_like_tool_calls(text: str) -> list[dict] | None:
 
     # Plain JSON objects anywhere in the text (no fences)
     for m in re.finditer(r'\{[^{}]*"name"\s*:[^{}]*"(?:arguments|parameters)"\s*:[^{}]*\{[^{}]*\}[^{}]*\}', text, re.DOTALL):
-        tc = _parse_single_tool_call(m.group(0))
+        tc = _parse_single_tool_call(m.group(0), tools=tools)
         if tc:
             results.append(tc)
 
@@ -344,6 +383,9 @@ async def proxy(request: Request, path: str):
 
     streaming = req_json.get("stream", False)
     has_tools = bool(req_json.get("tools"))
+    # Single-tool name used as fallback when model emits args-only JSON
+    _tool_list = req_json.get("tools") or []
+    _sole_tool = _tool_list[0]["function"]["name"] if len(_tool_list) == 1 else None
 
     if not has_tools:
         # No tools — plain passthrough
@@ -389,7 +431,7 @@ async def proxy(request: Request, path: str):
             and not msg.get("tool_calls")
             and msg.get("content")
         ):
-            tc = _looks_like_tool_calls(msg["content"])
+            tc = _looks_like_tool_calls(msg["content"], _sole_tool, _tool_list)
             if tc:
                 data = _build_tool_calls_response(data, tc)
             else:
@@ -463,7 +505,7 @@ async def proxy(request: Request, path: str):
 
         full_content = "".join(content_parts)
         full_reasoning = "".join(reasoning_parts)
-        finish = (last_chunk or {}).get("choices", [{}])[0].get("finish_reason", "stop")
+        finish = ((last_chunk or {}).get("choices") or [{}])[0].get("finish_reason", "stop")
         print(f"[STR] chunks={len(chunks)} is_tool_call_stream={is_tool_call_stream} "
               f"content_len={len(full_content)} reasoning_len={len(full_reasoning)} finish={finish}", flush=True)
 
@@ -515,25 +557,19 @@ async def proxy(request: Request, path: str):
         if full_content:
             print(f"      content={repr(full_content[:500])}", flush=True)
         if finish == "stop" and full_content:
-            tc = _looks_like_tool_calls(full_content)
+            tc = _looks_like_tool_calls(full_content, _sole_tool, _tool_list)
             if tc and last_chunk:
                 print(f"      rewriting as tool_calls: {[t['name'] for t in tc]}", flush=True)
                 yield _build_tool_calls_stream_chunk(last_chunk, tc)
                 return
 
-        # Not a tool call — pass through original chunks (filter out reasoning-only chunks
-        # so the client doesn't receive empty content that looks like a stall)
-        visible = [c for c in chunks if c.get("choices", [{}])[0].get("delta", {}).get("content")]
-        if not visible and full_reasoning and last_chunk:
-            # Surface reasoning as plain content so the client sees something
-            print(f"      surfacing reasoning as content ({len(full_reasoning)} chars)", flush=True)
-            text_chunk = {**last_chunk, "choices": [{"index": 0,
-                "delta": {"role": "assistant", "content": full_reasoning}, "finish_reason": "stop"}]}
-            yield f"data: {json.dumps(text_chunk)}\n\n"
-        else:
-            print(f"      passthrough {len(chunks)} chunks", flush=True)
-            for c in chunks:
-                yield f"data: {json.dumps(c)}\n\n"
+        # Not a tool call — pass through visible content chunks only.
+        # Never surface raw reasoning as content: it would enter conversation history
+        # and confuse the model on the next turn.
+        visible = [c for c in chunks if (c.get("choices") or [{}])[0].get("delta", {}).get("content")]
+        print(f"      passthrough {len(visible)}/{len(chunks)} visible chunks", flush=True)
+        for c in visible:
+            yield f"data: {json.dumps(c)}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(stream_with_fix(), media_type="text/event-stream")

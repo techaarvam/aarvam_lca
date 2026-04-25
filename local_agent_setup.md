@@ -118,7 +118,7 @@ ollama create qwen2.5-coder-7b-32k -f /tmp/Modelfile-coder-7b-32k
 Or run `setup_qwen_ollama_models.sh` which does the qwen2.5 steps automatically:
 
 ```bash
-cd ~/qwenrundemo/aarvam_lca && ./setup_qwen_ollama_models.sh
+cd ~/demodir/aarvam_lca && ./setup_qwen_ollama_models.sh
 ```
 
 Verify capabilities:
@@ -144,13 +144,13 @@ It intercepts `/v1/chat/completions` to:
 - For reasoning models (Nemotron): collect `delta.reasoning` tokens and fall back to a non-streaming retry when the stream ends with reasoning-only and no tool call — avoids silent stalls
 
 ```bash
-cd ~/qwenrundemo/aarvam_lca && ./serve_tool_calls_proxy.sh
+cd ~/demodir/aarvam_lca && ./serve_tool_calls_proxy.sh
 ```
 
 Or directly:
 
 ```bash
-python3 ~/qwenrundemo/aarvam_lca/tool_calls_proxy.py --port 8100
+python3 ~/demodir/aarvam_lca/tool_calls_proxy.py --port 8100
 ```
 
 Leave this running in a terminal or tmux session.

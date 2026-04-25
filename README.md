@@ -2,7 +2,7 @@
 
 Local Qwen tooling for two serving paths:
 
-- `tool_calls_proxy.py`: Ollama proxy that rewrites Qwen tool-call output into OpenAI `tool_calls`
+- `tool_calls_proxy.py`: Ollama proxy that rewrites tool-call output into OpenAI `tool_calls` — supports Qwen, Nemotron, and other local models
 - `vllm/serve_qwen_toolcall.py`: vLLM launcher for the local Qwen GGUF models with the XML-to-tool-calls parser
 
 The primary workflow in this repo is the Ollama proxy path. The vLLM adapter,

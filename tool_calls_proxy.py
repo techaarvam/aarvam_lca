@@ -179,13 +179,17 @@ def _inject_tools_into_messages(req_json: dict) -> dict:
 
 _REQUIRED_ARGS: dict[str, dict] = {
     "bash": {"description": "run command"},
+    # OpenHands execute_bash requires security_risk; qwen3 omits it
+    "execute_bash": {"security_risk": "low"},
 }
 
 def _patch_args(name: str, args: dict) -> dict:
     """Inject any required fields that the model omitted for known tools."""
+    # Normalize all arg keys to lowercase so case variations from the model are handled
+    normalized = {k.lower(): v for k, v in args.items()}
     required = _REQUIRED_ARGS.get(name, {})
-    missing = {k: v for k, v in required.items() if k not in args}
-    return {**missing, **args} if missing else args
+    missing = {k: v for k, v in required.items() if k not in normalized}
+    return {**missing, **normalized} if missing else normalized
 
 
 def _patch_native_tool_calls(data: dict) -> dict:
@@ -307,7 +311,12 @@ async def proxy(request: Request, path: str):
             stream = preview.get("stream", False)
             msgs = len(preview.get("messages", []))
             tools = len(preview.get("tools", []))
-            print(f"      model={model} stream={stream} msgs={msgs} tools={tools}", flush=True)
+            fns = len(preview.get("functions", []))
+            print(f"      model={model} stream={stream} msgs={msgs} tools={tools} functions={fns}", flush=True)
+            if tools == 0 and fns == 0 and msgs > 0:
+                # Log last user message for context
+                last = preview["messages"][-1]
+                print(f"      last_msg role={last.get('role')} content={str(last.get('content',''))[:200]}", flush=True)
         except Exception:
             print(f"      body(raw)={body[:200]}", flush=True)
 
@@ -403,34 +412,42 @@ async def proxy(request: Request, path: str):
         chunks = []
         last_chunk = None
         content_parts = []
+        reasoning_parts = []
         is_tool_call_stream = False  # set if upstream returns proper tool_calls
         active_body = body
         active_headers = headers
 
+        async def _collect_stream(stream_resp):
+            nonlocal last_chunk, is_tool_call_stream
+            raw_lines = []
+            async for line in stream_resp.aiter_lines():
+                raw_lines.append(line)
+                if not line.startswith("data: "):
+                    continue
+                data_str = line[6:]
+                if data_str == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data_str)
+                except Exception:
+                    continue
+                chunks.append(chunk)
+                choices = chunk.get("choices", [])
+                if not choices:
+                    continue
+                last_chunk = chunk
+                delta = choices[0].get("delta", {})
+                if delta.get("tool_calls"):
+                    is_tool_call_stream = True
+                if delta.get("content"):
+                    content_parts.append(delta["content"])
+                if delta.get("reasoning"):
+                    reasoning_parts.append(delta["reasoning"])
+            return raw_lines
+
         async with httpx.AsyncClient(timeout=300) as client:
             async with client.stream("POST", url, headers=active_headers, content=active_body) as resp:
-                raw_lines = []
-                async for line in resp.aiter_lines():
-                    raw_lines.append(line)
-                    if not line.startswith("data: "):
-                        continue
-                    data_str = line[6:]
-                    if data_str == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data_str)
-                    except Exception:
-                        continue
-                    chunks.append(chunk)
-                    choices = chunk.get("choices", [])
-                    if not choices:
-                        continue
-                    last_chunk = chunk
-                    delta = choices[0].get("delta", {})
-                    if delta.get("tool_calls"):
-                        is_tool_call_stream = True
-                    if delta.get("content"):
-                        content_parts.append(delta["content"])
+                raw_lines = await _collect_stream(resp)
 
         # If no chunks but we got a non-data error line, check for "does not support tools"
         if not chunks:
@@ -442,31 +459,13 @@ async def proxy(request: Request, path: str):
                 fallback_headers = {**active_headers, "content-length": str(len(fallback_body))}
                 async with httpx.AsyncClient(timeout=300) as client:
                     async with client.stream("POST", url, headers=fallback_headers, content=fallback_body) as resp2:
-                        async for line in resp2.aiter_lines():
-                            if not line.startswith("data: "):
-                                continue
-                            data_str = line[6:]
-                            if data_str == "[DONE]":
-                                break
-                            try:
-                                chunk = json.loads(data_str)
-                            except Exception:
-                                continue
-                            chunks.append(chunk)
-                            choices = chunk.get("choices", [])
-                            if not choices:
-                                continue
-                            last_chunk = chunk
-                            delta = choices[0].get("delta", {})
-                            if delta.get("tool_calls"):
-                                is_tool_call_stream = True
-                            if delta.get("content"):
-                                content_parts.append(delta["content"])
+                        await _collect_stream(resp2)
 
-        print(f"[STR] chunks={len(chunks)} is_tool_call_stream={is_tool_call_stream} content_len={len(''.join(content_parts))}", flush=True)
-        if last_chunk:
-            lc_finish = (last_chunk or {}).get("choices", [{}])[0].get("finish_reason", "?")
-            print(f"      last_chunk finish={lc_finish}", flush=True)
+        full_content = "".join(content_parts)
+        full_reasoning = "".join(reasoning_parts)
+        finish = (last_chunk or {}).get("choices", [{}])[0].get("finish_reason", "stop")
+        print(f"[STR] chunks={len(chunks)} is_tool_call_stream={is_tool_call_stream} "
+              f"content_len={len(full_content)} reasoning_len={len(full_reasoning)} finish={finish}", flush=True)
 
         if is_tool_call_stream:
             # Already proper tool_calls stream — patch args then pass through
@@ -476,9 +475,45 @@ async def proxy(request: Request, path: str):
             yield "data: [DONE]\n\n"
             return
 
-        # Check if full content is a tool call
-        full_content = "".join(content_parts)
-        finish = (last_chunk or {}).get("choices", [{}])[0].get("finish_reason", "stop")
+        # Model emitted only reasoning with no tool call — fall back to non-streaming
+        # which is more reliable for reasoning models (avoids finish_reason=stop quirk)
+        if not full_content and full_reasoning and finish == "stop":
+            print("[RTY] only reasoning, no tool call in stream — retrying non-streaming", flush=True)
+            ns_req = {**req_json, "stream": False}
+            ns_body = json.dumps(ns_req).encode()
+            ns_headers = {**active_headers, "content-length": str(len(ns_body))}
+            async with httpx.AsyncClient(timeout=300) as client:
+                ns_resp = await client.post(url, headers=ns_headers, content=ns_body)
+            try:
+                ns_data = ns_resp.json()
+            except Exception:
+                ns_data = {}
+            ns_choice = ns_data.get("choices", [{}])[0]
+            ns_msg = ns_choice.get("message", {})
+            if ns_msg.get("tool_calls"):
+                # Non-streaming gave us a proper tool call — emit as SSE
+                print(f"      non-stream retry got tool_calls: {[tc['function']['name'] for tc in ns_msg['tool_calls']]}", flush=True)
+                ns_data = _patch_native_tool_calls(ns_data)
+                fake_chunk = {
+                    "id": last_chunk.get("id", "chatcmpl-retry") if last_chunk else "chatcmpl-retry",
+                    "object": "chat.completion.chunk",
+                    "created": last_chunk.get("created", int(time.time())) if last_chunk else int(time.time()),
+                    "model": ns_data.get("model", req_json.get("model", "")),
+                    "choices": [{"index": 0, "delta": {"role": "assistant", "content": None,
+                                                        "tool_calls": ns_msg["tool_calls"]},
+                                 "finish_reason": "tool_calls"}],
+                }
+                yield f"data: {json.dumps(fake_chunk)}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+            elif ns_msg.get("content"):
+                # Non-streaming gave plain text — emit as content delta
+                full_content = ns_msg["content"]
+                print(f"      non-stream retry gave content: {repr(full_content[:200])}", flush=True)
+
+        # Check if full content is a tool call in text form
+        if full_content:
+            print(f"      content={repr(full_content[:500])}", flush=True)
         if finish == "stop" and full_content:
             tc = _looks_like_tool_calls(full_content)
             if tc and last_chunk:
@@ -486,10 +521,19 @@ async def proxy(request: Request, path: str):
                 yield _build_tool_calls_stream_chunk(last_chunk, tc)
                 return
 
-        # Not a tool call — pass through original chunks
-        print(f"      passthrough {len(chunks)} chunks", flush=True)
-        for c in chunks:
-            yield f"data: {json.dumps(c)}\n\n"
+        # Not a tool call — pass through original chunks (filter out reasoning-only chunks
+        # so the client doesn't receive empty content that looks like a stall)
+        visible = [c for c in chunks if c.get("choices", [{}])[0].get("delta", {}).get("content")]
+        if not visible and full_reasoning and last_chunk:
+            # Surface reasoning as plain content so the client sees something
+            print(f"      surfacing reasoning as content ({len(full_reasoning)} chars)", flush=True)
+            text_chunk = {**last_chunk, "choices": [{"index": 0,
+                "delta": {"role": "assistant", "content": full_reasoning}, "finish_reason": "stop"}]}
+            yield f"data: {json.dumps(text_chunk)}\n\n"
+        else:
+            print(f"      passthrough {len(chunks)} chunks", flush=True)
+            for c in chunks:
+                yield f"data: {json.dumps(c)}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(stream_with_fix(), media_type="text/event-stream")

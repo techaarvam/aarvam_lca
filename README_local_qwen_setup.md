@@ -130,7 +130,9 @@ curl -s http://localhost:11434/api/show -d '{"name":"qwen3-8b-64k"}' \
 The proxy runs on port 8100, forwarding to Ollama at `localhost:11434`.
 It intercepts `/v1/chat/completions` to:
 - Convert bare-JSON/XML tool call content to proper OpenAI `tool_calls` format (Qwen2.5)
-- Inject required fields the model omits — e.g. `description` for the `bash` tool (all models)
+- Inject required fields the model omits — e.g. `description` for `bash`, `security_risk` for `execute_bash` (OpenHands)
+- Normalize tool call argument keys to lowercase (handles case variations from different models)
+- For reasoning models (Nemotron): collect `delta.reasoning` tokens and fall back to a non-streaming retry when the stream ends with reasoning-only and no tool call — avoids silent stalls
 
 ```bash
 cd ~/qwenrundemo/aarvam_lca && ./serve_tool_calls_proxy.sh
@@ -226,9 +228,12 @@ Plain text responses pass through unmodified.
 
 The proxy injects fields that models omit but agent frameworks require:
 
-| Tool | Injected field | Default value |
-|---|---|---|
-| `bash` | `description` | `"run command"` |
+| Tool | Injected field | Default value | Reason |
+|---|---|---|---|
+| `bash` | `description` | `"run command"` | opencode requires it |
+| `execute_bash` | `security_risk` | `"low"` | OpenHands validates it; qwen3/nemotron omit it |
+
+Argument keys are also lowercased — models sometimes emit `Security_Risk` or `Command` with wrong case.
 
 To extend, edit `_REQUIRED_ARGS` near the top of `tool_calls_proxy.py`.
 
@@ -240,12 +245,22 @@ To extend, edit `_REQUIRED_ARGS` near the top of `tool_calls_proxy.py`.
 |---|---|---|---|---|
 | `qwen3-8b-64k` | 5.2 GB | 64k | tools, thinking | **Recommended on this 12 GB Blackwell setup** |
 | `qwen3-8b-32k` | 5.2 GB | 32k | tools, thinking | Lower-context option with the same base model |
-| `qwen2.5-coder-7b-32k` | 4.7 GB | 32k | tools | Fallback, and a possible fit for smaller CPU+GPU machines |
-| `qwen2.5-coder-14b-q4` | 9 GB | 15k | tools | Higher quality per token, but shorter practical context in vLLM here |
+| `qwen2.5-coder-7b-32k` | 4.7 GB | 32k | tools | Fallback for smaller CPU+GPU machines |
+| `qwen2.5-coder-14b-q4` | 9 GB | 15k | tools | Higher quality per token, shorter practical context |
 | `q3_32k.14:latest` | 9.3 GB | 32k | tools, thinking | Reasoning tasks |
+| `nemotron-3-nano-64k` | ~3 GB | 64k | tools, reasoning | NVIDIA Nemotron 4B; fast, uses `delta.reasoning` stream |
+| `nemotron-3-nano-128k` | ~3 GB | 128k | tools, reasoning | 128k context variant |
+| `nemotron-3-nano-256k` | ~3 GB | 256k | tools, reasoning | Full 256k context variant |
+| `nemotron-mini-64k` | ~3 GB | 64k | tools, reasoning | Nemotron-mini base, 64k |
+| `nemotron-mini-128k` | ~3 GB | 128k | tools, reasoning | Nemotron-mini 128k variant |
+| `nemotron-mini-256k` | ~3 GB | 256k | tools, reasoning | Nemotron-mini full 256k |
 
 All models via the proxy on port 8100. The proxy and vLLM share port 8100 —
 run only one at a time.
+
+> **Nemotron streaming note:** Nemotron models output thinking in `delta.reasoning` chunks before
+> emitting tool calls. The proxy handles this transparently — if the stream ends with reasoning only
+> and no tool call, it retries non-streaming and re-emits the result as SSE.
 
 ---
 

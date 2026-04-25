@@ -78,7 +78,47 @@ pip install fastapi uvicorn httpx
 
 ## Step 1 — Pull and Register Models
 
-### qwen3-8b-64k (recommended)
+### nemotron-3-nano-128k (recommended)
+
+```bash
+ollama pull nemotron-3-nano:4b   # ~3 GB, one-time download
+
+# 64k variant
+cat > /tmp/Modelfile-nemotron-nano-64k << 'EOF'
+FROM nemotron-3-nano:4b
+PARAMETER num_ctx 65536
+EOF
+ollama create nemotron-3-nano-64k -f /tmp/Modelfile-nemotron-nano-64k
+
+# 128k variant (recommended)
+cat > /tmp/Modelfile-nemotron-nano-128k << 'EOF'
+FROM nemotron-3-nano:4b
+PARAMETER num_ctx 131072
+EOF
+ollama create nemotron-3-nano-128k -f /tmp/Modelfile-nemotron-nano-128k
+
+# 256k variant (for very long contexts)
+cat > /tmp/Modelfile-nemotron-nano-256k << 'EOF'
+FROM nemotron-3-nano:4b
+PARAMETER num_ctx 262144
+EOF
+ollama create nemotron-3-nano-256k -f /tmp/Modelfile-nemotron-nano-256k
+```
+
+> **Note:** Nemotron models emit thinking tokens in `delta.reasoning` during streaming.
+> The proxy handles this transparently — no extra configuration needed.
+
+Verify:
+
+```bash
+curl -s http://localhost:11434/api/show -d '{"name":"nemotron-3-nano-128k"}' \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('capabilities', []))"
+# Expected: ['completion', 'tools']
+```
+
+---
+
+### qwen3-8b-64k (alternative)
 
 ```bash
 ollama pull qwen3:8b   # 5.2 GB, one-time download
@@ -127,6 +167,7 @@ Verify capabilities:
 curl -s http://localhost:11434/api/show -d '{"name":"qwen3-8b-64k"}' \
     | python3 -c "import sys,json; print(json.load(sys.stdin).get('capabilities', []))"
 # Expected: ['completion', 'tools', 'thinking']
+# Note: effective context limited to ~40k on 12 GB GPU despite num_ctx 65536
 ```
 
 > **After a reboot:** Ollama model registrations persist (stored in

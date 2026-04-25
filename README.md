@@ -11,7 +11,7 @@ benchmark, and experiment notes are kept under `vllm/` as secondary material.
 
 ## Primary docs
 
-- [README_local_qwen_setup.md](README_local_qwen_setup.md): Ollama proxy setup, model registrations, and agent-client usage
+- [local_agent_setup.md](local_agent_setup.md): Ollama proxy setup, model registrations, and agent-client usage
 - [INSTALL.md](INSTALL.md): broader local stack notes for Ollama, qwencode, opencode, and OpenHands
 - [PROJECT_REPORT.md](PROJECT_REPORT.md): project report for the Blackwell 5070 / 12 GB local coding-agent setup, findings matrix, and architecture diagrams
 

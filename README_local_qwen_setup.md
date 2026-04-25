@@ -13,29 +13,38 @@ tool-call responses.
 
 ---
 
-## Recommended Model: `qwen3-8b-64k`
+## Recommended Model: `nemotron-3-nano-128k`
 
-`qwen3:8b` is the practical recommendation on this machine because it balances
-context length against full-GPU fit:
-- Native tool calling through Ollama
-- `thinking` capability
-- 8B parameters, 5.2 GB — leaves room to keep the model fully on this 12 GB GPU
-- In practice here, explicit `num_ctx 32768` and `num_ctx 65536` both worked, while leaving the base model at defaults fell back to `4096`
-- Observed runtime snapshot on this setup:
+Based on [benchmarking on 2026-04-25](logs/benchmark_20260425_qwen3_vs_nemotron.md),
+`nemotron-3-nano-128k` is the recommended daily driver on this 12 GB Blackwell setup:
+
+- **3.4× faster** than qwen3-8b-64k across all task types (29.8s vs 101.8s total)
+- **3× more effective context**: genuinely processes 131,072 tokens vs ~40k actual for qwen3
+- 4B parameters, ~7.1 GB VRAM — leaves more headroom for large KV caches
+- 100% accuracy on all benchmark tasks (same as qwen3)
+- Concise, direct responses — less token waste
+- 256k variant (`nemotron-3-nano-256k`) available for very long context tasks
+
+> **Why qwen3 doesn't reach its 64k spec:** Ollama loads `qwen3-8b-64k` at
+> **40,960** tokens on this GPU due to VRAM overhead. The KV cache for 65k context
+> at 8B parameters doesn't fit alongside the weights in 12 GB. Nemotron's 4B
+> weights leave enough VRAM to comfortably hold the 128k KV cache.
 
 ```bash
-((pyenv1)) ~/.qwen % ollama ps
-NAME                   ID              SIZE      PROCESSOR    CONTEXT    UNTIL
-qwen3-8b-64k:latest    1adc23451bf4    8.8 GB    100% GPU     40960      Forever
+# Recommended
+ollama ps   # verify loaded context
+NAME                          CONTEXT
+nemotron-3-nano-128k:latest   131072   ← genuine 128k
+qwen3-8b-64k:latest            40960   ← capped by VRAM
 ```
 
-  This is a useful sanity check that the recommended model fits fully on the
-  GPU in a practical coding-agent configuration, with a loaded context window
-  of `40960` in that session.
-- Compared with `qwen2.5-coder-7b-32k`, Qwen3 8B showed materially stronger coding quality in local testing
+### When to use qwen3-8b-64k instead
 
-`qwen2.5-coder-7b-32k` is still kept as a fallback, especially for smaller
-CPU+GPU hardware where an even smaller model may be the safer fit.
+- You want verbose, elaborated explanations (documentation, tutorials)
+- You prefer native tool calling without the proxy reasoning-fallback path
+- You are on a >16 GB GPU where 64k context is achievable
+
+`qwen2.5-coder-7b-32k` remains a fallback for smaller CPU+GPU hardware.
 
 ---
 

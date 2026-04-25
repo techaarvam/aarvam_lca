@@ -39,6 +39,112 @@ DEFAULT_PORT = 8100
 _META = {"description", "workdir", "timeout", "cwd"}
 
 
+def _strip_reasoning_markup(text: str) -> str:
+    """Remove reasoning markup that some models leak into visible content."""
+    text = re.sub(r'<think\b[^>]*>.*?</think>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'</?think\b[^>]*>', '', text, flags=re.IGNORECASE)
+    return text.strip()
+
+
+def _json_object_candidates(text: str) -> list[str]:
+    """
+    Return balanced top-level JSON-ish object substrings.
+
+    This is deliberately small and only tracks braces outside strings; it lets
+    us find a tool object after leaked reasoning text or other preambles.
+    """
+    candidates: list[str] = []
+    start = None
+    depth = 0
+    in_string = False
+    escape = False
+    for i, ch in enumerate(text):
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}" and depth:
+            depth -= 1
+            if depth == 0 and start is not None:
+                candidates.append(text[start:i + 1])
+                start = None
+    return candidates
+
+
+def _loads_jsonish_dict(text: str) -> dict | None:
+    """Parse common model JSON-ish variants into a dict."""
+    try:
+        obj = json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        repaired = re.sub(r'([,{]\s*)([A-Za-z_][\w-]*)\s*:', r'\1"\2":', text)
+        repaired = re.sub(r',\s*([}\]])', r'\1', repaired)
+        try:
+            obj = json.loads(repaired)
+        except (json.JSONDecodeError, ValueError):
+            return None
+    return obj if isinstance(obj, dict) else None
+
+
+def _parse_jsonish_tool_call(text: str, fallback_tool_name: str | None = None,
+                             tools: list[dict] | None = None) -> dict | None:
+    """
+    Parse malformed but recognizable tool-call text.
+
+    Nemotron can emit a JSON-looking object with unquoted keys or with an
+    over-long command string followed by JSON-ish metadata. Preserve the model's
+    command text and let the client/tool layer execute or reject it normally.
+    """
+    obj = _loads_jsonish_dict(text)
+    if obj is not None:
+        return _parse_single_tool_call(json.dumps(obj), fallback_tool_name, tools)
+
+    name_match = re.search(r'"name"\s*:\s*"([^"]+)"', text, re.DOTALL)
+    name = name_match.group(1) if name_match else fallback_tool_name
+    if not name:
+        return None
+
+    args: dict = {}
+    command_match = re.search(
+        r'"command"\s*:\s*"(.*)"\s*,\s*"?(?:timeout|description|workdir|cwd|security_risk)"?\s*:',
+        text,
+        re.DOTALL,
+    )
+    if not command_match:
+        command_match = re.search(r'"command"\s*:\s*"(.*)"\s*}', text, re.DOTALL)
+    if command_match:
+        args["command"] = command_match.group(1).replace('\\"', '"').strip()
+
+    for key in ("timeout", "description", "workdir", "cwd", "security_risk"):
+        m = re.search(rf'"?{key}"?\s*:\s*("([^"]*)"|[0-9]+|true|false|null)', text, re.IGNORECASE)
+        if not m:
+            continue
+        raw = m.group(1)
+        if raw.startswith('"') and raw.endswith('"'):
+            args[key] = raw[1:-1]
+        elif raw.isdigit():
+            args[key] = int(raw)
+        elif raw.lower() == "true":
+            args[key] = True
+        elif raw.lower() == "false":
+            args[key] = False
+        elif raw.lower() == "null":
+            args[key] = None
+
+    if args:
+        return {"name": name, "arguments": args}
+    return None
+
+
 def _infer_tool_from_args(args: dict, tools: list[dict]) -> str | None:
     """
     Find the best-matching tool for an args-only dict by scoring parameter overlap.
@@ -67,7 +173,7 @@ def _infer_tool_from_args(args: dict, tools: list[dict]) -> str | None:
 def _parse_single_tool_call(text: str, fallback_tool_name: str | None = None,
                              tools: list[dict] | None = None) -> dict | None:
     """Parse one JSON blob as a tool call, return {name, arguments} or None."""
-    text = text.strip()
+    text = _strip_reasoning_markup(text.strip())
     try:
         obj = json.loads(text)
     except (json.JSONDecodeError, ValueError):
@@ -99,7 +205,7 @@ def _looks_like_tool_calls(text: str, fallback_tool_name: str | None = None,
     Return list of tool call dicts if text contains one or more bare tool call
     JSON objects (possibly wrapped in XML tags or a JSON array). Returns None if not.
     """
-    text = text.strip()
+    text = _strip_reasoning_markup(text.strip())
     # Strip markdown code fences
     text = re.sub(r'^```(?:json|xml)?\s*', '', text)
     text = re.sub(r'\s*```$', '', text)
@@ -143,7 +249,20 @@ def _looks_like_tool_calls(text: str, fallback_tool_name: str | None = None,
 
     results = []
     for blob in blobs:
+        candidate_results = []
+        for candidate in _json_object_candidates(blob):
+            tc = _parse_single_tool_call(candidate, fallback_tool_name, tools)
+            if not tc:
+                tc = _parse_jsonish_tool_call(candidate, fallback_tool_name, tools)
+            if tc:
+                candidate_results.append(tc)
+        if candidate_results:
+            results.extend(candidate_results)
+            continue
+
         tc = _parse_single_tool_call(blob, fallback_tool_name, tools)
+        if not tc:
+            tc = _parse_jsonish_tool_call(blob, fallback_tool_name, tools)
         if tc:
             results.append(tc)
 
@@ -155,6 +274,15 @@ def _looks_like_tool_calls(text: str, fallback_tool_name: str | None = None,
     # markdown code fence mid-paragraph.
     for m in re.finditer(r'```(?:json|xml)?\s*(\{.*?\})\s*```', text, re.DOTALL):
         tc = _parse_single_tool_call(m.group(1), tools=tools)
+        if tc:
+            results.append(tc)
+    if results:
+        return results
+
+    for candidate in _json_object_candidates(text):
+        tc = _parse_single_tool_call(candidate, fallback_tool_name, tools)
+        if not tc:
+            tc = _parse_jsonish_tool_call(candidate, fallback_tool_name, tools)
         if tc:
             results.append(tc)
     if results:
@@ -222,12 +350,18 @@ _REQUIRED_ARGS: dict[str, dict] = {
     "execute_bash": {"security_risk": "low"},
 }
 
+_ARG_ALIASES: dict[str, dict[str, str]] = {
+    # OpenCode's write tool requires camelCase.
+    "write": {"filepath": "filePath"},
+}
+
 def _patch_args(name: str, args: dict) -> dict:
     """Inject any required fields that the model omitted for known tools."""
-    # Normalize all arg keys to lowercase so case variations from the model are handled
-    normalized = {k.lower(): v for k, v in args.items()}
+    aliases = _ARG_ALIASES.get(name, {})
+    normalized = {aliases.get(k.lower(), k): v for k, v in args.items()}
+    lower_keys = {k.lower() for k in normalized}
     required = _REQUIRED_ARGS.get(name, {})
-    missing = {k: v for k, v in required.items() if k not in normalized}
+    missing = {k: v for k, v in required.items() if k.lower() not in lower_keys}
     return {**missing, **normalized} if missing else normalized
 
 

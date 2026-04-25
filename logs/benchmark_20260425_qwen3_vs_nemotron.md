@@ -7,6 +7,36 @@
 
 ---
 
+## Current Nemotron Tool-Call Status
+
+This benchmark was run with controlled prompts that did not hit the later
+OpenCode tool-call compatibility issue. Its speed, factual-answer, and context
+results are still useful for those prompt types, but they should not be read as
+proof that Nemotron is equally reliable for full coding-agent workflows.
+
+A later OpenCode run using
+`nemotron-nano-9b-v2-q3_k_m-128k:latest` and the prompt:
+
+> generate 5 numpy demos in /tmp/numpy_demos2 directory for transpose, matrix multiply, inverse, solve, concatenate. Run them and store the outputs in output_<name>.txt
+
+exposed two separate problems:
+
+- **Proxy compatibility:** Nemotron emitted tool calls as leaked reasoning
+  markup plus adjacent JSON or JSON-like objects, sometimes with unquoted keys
+  such as `timeout: 240000`. `tool_calls_proxy.py` has since been updated to
+  strip leaked think markup, split adjacent JSON tool objects, tolerate the
+  observed JSON-ish shape, and preserve OpenCode's `filePath` argument casing.
+- **Model command quality:** after the proxy converted responses into valid
+  OpenAI `tool_calls`, OpenCode was able to invoke `write` and `bash`, but the
+  model still generated bad Python and shell commands in follow-up steps. That
+  is a model behavior issue, not only a response-shape issue.
+
+Practical takeaway: Qwen 3 remains the recommended daily driver for OpenCode
+tool workflows. Nemotron remains interesting for speed and long context, but it
+is experimental for multi-step agent tool use until more stress cases pass.
+
+---
+
 ## Standard Prompts
 
 | Test | qwen3-8b-64k | nemotron-3-nano-128k | Winner |
@@ -18,7 +48,7 @@
 | Creative (haiku) | 6.5s, 651 tok, 100.9 tok/s | 5.5s, 882 tok, 161.4 tok/s | Tie (quality similar) |
 | **TOTAL** | **101.8s, 6824 tok, 67.1 tok/s** | **29.8s, 2592 tok, 87.1 tok/s** | **Nemotron 3.4× faster** |
 
-**Quality:** Both models answered every question correctly. qwen3 tends to be more verbose and elaborate; nemotron is concise and accurate. Neither made factual errors.
+**Quality:** Both models answered every standard benchmark question correctly. qwen3 tends to be more verbose and elaborate; nemotron is concise and accurate on these prompts. These results do not cover multi-step OpenCode tool execution.
 
 ---
 
@@ -51,7 +81,7 @@ A unique codename was hidden at the 90% position of a generated document. Both m
 | Effective context (this GPU) | ~40k tokens | 128k tokens (256k variant available) |
 | Avg tok/s (standard prompts) | 99.6 | 159.4 |
 | Total benchmark time | 101.8s | 29.8s |
-| Factual accuracy | 100% | 100% |
+| Factual accuracy on these prompts | 100% | 100% |
 | Response style | Verbose, elaborated | Concise, direct |
 | Tool calling | Native (Ollama) | Via proxy reasoning-fallback |
 
@@ -61,16 +91,16 @@ A unique codename was hidden at the 90% position of a generated document. Both m
 
 - Native tool calling without proxy reasoning-fallback path
 - Better for verbose, elaborated explanations (documentation, tutorials)
-- 100% accuracy on all benchmark tasks (same as nemotron)
+- Correct answers on all benchmark prompts in this log
 - Strong reasoning capabilities with thinking tokens support
 - Effective context of ~40k tokens on this GPU (limited by VRAM overhead)
 
 qwen3-8b-64k is preferred when response verbosity and elaboration are desired. nemotron-3-nano-128k remains useful for:
 - **3.4× faster** end-to-end across all task types
 - **3× more effective context** (128k vs ~40k actual) — critical for real codebases
-- Identical accuracy on all tested tasks
+- Identical answer accuracy on the controlled benchmark prompts
 - Smaller VRAM footprint leaves more headroom for the KV cache at large contexts
-- The tool-call proxy handles Nemotron's reasoning-stream quirk transparently
+- The tool-call proxy handles several observed Nemotron response-shape quirks, but OpenCode multi-step tool reliability is still experimental
 
 ---
 

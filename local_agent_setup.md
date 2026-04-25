@@ -20,7 +20,7 @@ Based on [benchmarking on 2026-04-25](logs/benchmark_20260425_qwen3_vs_nemotron.
 
 - Native tool calling without proxy reasoning-fallback path
 - Better for verbose, elaborated explanations (documentation, tutorials)
-- 100% accuracy on all benchmark tasks (same as nemotron)
+- Correct answers on all prompts in the 2026-04-25 benchmark log
 - Effective context of ~40k tokens on this GPU (limited by VRAM overhead)
 - Strong reasoning capabilities with thinking tokens support
 
@@ -105,7 +105,8 @@ ollama create nemotron-3-nano-256k -f /tmp/Modelfile-nemotron-nano-256k
 ```
 
 > **Note:** Nemotron models emit thinking tokens in `delta.reasoning` during streaming.
-> The proxy handles this transparently — no extra configuration needed.
+> The proxy handles several observed response-shape quirks, but Nemotron remains
+> experimental for multi-step OpenCode tool workflows.
 
 Verify:
 
@@ -308,8 +309,9 @@ All models via the proxy on port 8100. The proxy and vLLM share port 8100 —
 run only one at a time.
 
 > **Nemotron streaming note:** Nemotron models output thinking in `delta.reasoning` chunks before
-> emitting tool calls. The proxy handles this transparently — if the stream ends with reasoning only
-> and no tool call, it retries non-streaming and re-emits the result as SSE.
+> emitting tool calls. If the stream ends with reasoning only and no tool call,
+> the proxy retries non-streaming and re-emits the result as SSE. This addresses
+> one response-shape issue; it does not guarantee reliable multi-step tool use.
 
 ---
 

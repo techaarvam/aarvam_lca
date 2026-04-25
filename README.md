@@ -2,12 +2,21 @@
 
 Local Qwen tooling for two serving paths:
 
-- `tool_calls_proxy.py`: Ollama proxy that rewrites tool-call output into OpenAI `tool_calls` — supports Qwen, Nemotron, and other local models
-- **Recommended model:** `qwen3-8b-64k` — native tool calling, better for verbose explanations, 100% accuracy, effective context ~40k on 12 GB VRAM ([benchmark](logs/benchmark_20260425_qwen3_vs_nemotron.md))
+- `tool_calls_proxy.py`: Ollama proxy that rewrites model-emitted tool-call text into OpenAI `tool_calls`; Qwen is the most reliable path, while Nemotron support is still being hardened for OpenCode agent workflows
+- **Recommended model:** `qwen3-8b-64k` — native tool calling, better for verbose explanations, correct on the benchmark prompts, effective context ~40k on 12 GB VRAM ([benchmark](logs/benchmark_20260425_qwen3_vs_nemotron.md))
 - `vllm/serve_qwen_toolcall.py`: vLLM launcher for the local Qwen GGUF models with the XML-to-tool-calls parser
 
 The primary workflow in this repo is the Ollama proxy path. The vLLM adapter,
 benchmark, and experiment notes are kept under `vllm/` as secondary material.
+
+## Current status
+
+Qwen 3 and Qwen 2.5 are the dependable agent-tooling paths. Nemotron models are
+fast and useful for long-context prompts, but recent OpenCode testing with
+`nemotron-nano-9b-v2-q3_k_m-128k:latest` exposed tool-call formatting and
+follow-up command-quality issues. The proxy now handles the observed response
+shape incompatibilities, but Nemotron should still be treated as experimental
+for multi-step coding-agent tasks.
 
 ## Primary docs
 
